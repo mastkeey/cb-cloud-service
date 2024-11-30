@@ -62,11 +62,7 @@ jobs:
 
       - name: Build with Maven
         run: |
-          if [ "${{ inputs.skip_tests }}" == "true" ]; then
-            mvn clean package -DskipTests
-          else
-            mvn clean package
-          fi
+          mvn clean package -DskipTests
 
       - name: Save Build Artifacts
         uses: actions/upload-artifact@v3
@@ -113,11 +109,11 @@ jobs:
           EOF
 
       - name: Run Tests
-        if: inputs.skip_tests == 'false'
+        if: inputs.skip_tests != 'true'
         run: mvn test
 
       - name: Save Test Reports
-        if: inputs.skip_tests == 'false'
+        if: inputs.skip_tests != 'true'
         uses: actions/upload-artifact@v3
         with:
           name: test-reports
