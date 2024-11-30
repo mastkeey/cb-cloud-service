@@ -29,7 +29,7 @@ jobs:
           docker rm cb-cloud-service || true
           echo "Using Docker image: ${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:${{ inputs.image_tag }}"
           docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:${{ inputs.image_tag }}
-          sed -i "s|^DOCKER_TAG=.*|DOCKER_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:${{ inputs.image_tag }}|" .env
+          sed -i "s|^CB_CLOUD_SERVICE_DOCKER_TAG=.*|CB_CLOUD_SERVICE_DOCKER_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:${{ inputs.image_tag }}|" .env
           export $(cat .env | xargs)
           docker-compose up -d --build --no-deps cb-cloud-service --remove-orphans
           EOF
