@@ -1,0 +1,141 @@
+name: Build, Test, and Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to build and publish"
+        required: true
+        default: "main"
+      skip_tests:
+        description: "Skip tests during build"
+        required: false
+        default: "false"
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Project
+    runs-on: ubuntu-latest
+    steps:
+      - name: log branch name
+        run: |
+          echo "Current branch - ${{ inputs.branch }}"        
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Set up Maven settings
+        run: |
+          mkdir -p ~/.m2
+          cat <<EOF > ~/.m2/settings.xml
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${{ secrets.GH_USERNAME }}</username>
+                <password>${{ secrets.GH_TOKEN }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: |
+          if [ "${{ inputs.skip_tests }}" == "true" ]; then
+            mvn clean package -DskipTests
+          else
+            mvn clean package
+          fi
+
+      - name: Save Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: target/*.jar
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Run Tests
+        if: inputs.skip_tests == 'false'
+        run: mvn test
+
+      - name: Save Test Reports
+        if: inputs.skip_tests == 'false'
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-reports
+          path: target/surefire-reports/*.xml
+
+  publish:
+    name: Publish Docker Image
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Set current SHA
+        run: echo "CURRENT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
+      - name: Build Docker Image
+        run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:$CURRENT_SHA .
+
+      - name: Push Docker Image
+        run: |
+          echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login --username ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:$CURRENT_SHA
+          docker tag ${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:$CURRENT_SHA ${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:latest
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:latest
+
+      - name: Log Docker Tag
+        run: |
+          echo "Docker tag for the pushed image: $CURRENT_SHA"

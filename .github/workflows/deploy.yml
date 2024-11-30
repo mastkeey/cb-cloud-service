@@ -1,0 +1,35 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Tag of the Docker image to deploy"
+        required: false
+        default: "latest"
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts || true
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} > ~/.ssh/known_hosts
+
+      - name: Deploy to Server
+        run: |
+          ssh root@${{ secrets.SERVER_IP }} <<'EOF'
+          cd ./cloud-bot
+          docker stop cb-cloud-service || true
+          docker rm cb-cloud-service || true
+          echo "Using Docker image: ${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:${{ inputs.image_tag }}"
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:${{ inputs.image_tag }}
+          sed -i "s|^DOCKER_TAG=.*|DOCKER_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:${{ inputs.image_tag }}|" .env
+          export $(cat .env | xargs)
+          docker-compose up -d --build --no-deps cb-cloud-service --remove-orphans
+          EOF

@@ -1,0 +1,9 @@
+spring:
+  liquibase:
+    enabled: true
+    contexts: test
+    change-log: migrations/db.changelog-master.yaml
+logging:
+  level:
+    root: DEBUG
+    org.springframework: DEBUG
