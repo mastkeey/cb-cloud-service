@@ -9,6 +9,7 @@ import ru.mastkey.cloudservice.entity.Workspace;
 import ru.mastkey.cloudservice.support.IntegrationTestBase;
 import ru.mastkey.model.CreateWorkspaceRequest;
 import ru.mastkey.model.ErrorResponse;
+import ru.mastkey.model.PageWorkspaceResponse;
 import ru.mastkey.model.WorkspaceResponse;
 
 import java.util.List;
@@ -84,17 +85,19 @@ class WorkspaceControllerIntegrationTest extends IntegrationTestBase {
         String urlWithParams = String.format("/api/v1/workspaces/users/%s",
                 testUserId);
 
-        ResponseEntity<List<WorkspaceResponse>> response = testRestTemplate.exchange(
+        ResponseEntity<PageWorkspaceResponse> response = testRestTemplate.exchange(
                 urlWithParams,
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<List<WorkspaceResponse>>() {}
+                PageWorkspaceResponse.class
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        var workspaces = response.getBody();
-        assertThat(workspaces.size()).isEqualTo(1);
+        var pageWorkspaces = response.getBody();
+        assertThat(pageWorkspaces.getContent().size()).isEqualTo(1);
+        assertThat(pageWorkspaces.getTotalPages()).isEqualTo(1);
+        assertThat(pageWorkspaces.getTotalElements()).isEqualTo(1);
     }
 
     @Test

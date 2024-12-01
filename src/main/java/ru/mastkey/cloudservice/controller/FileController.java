@@ -10,7 +10,7 @@ import ru.mastkey.cloudservice.configuration.properties.Properties;
 import ru.mastkey.cloudservice.service.FileService;
 import ru.mastkey.cloudservice.util.PaginationUtils;
 import ru.mastkey.cloudservice.util.ResponseFactory;
-import ru.mastkey.model.FileResponse;
+import ru.mastkey.model.PageFileResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,9 +34,9 @@ public class FileController implements FileControllerApi {
     }
 
     @Override
-    public ResponseEntity<List<FileResponse>> getFilesInfo(Long telegramUserId, Integer pageNumber, Integer pageSize) {
+    public ResponseEntity<PageFileResponse> getFilesInfo(Long telegramUserId, Integer pageNumber, Integer pageSize) {
         var pageRequest = PaginationUtils.buildPageRequest(pageNumber, pageSize, properties.getPageSize());
-        return ResponseFactory.buildPagedResponse(fileService.getFilesInfo(telegramUserId, pageRequest));
+        return ResponseEntity.ok(fileService.getFilesInfo(telegramUserId, pageRequest));
     }
 
     @Override

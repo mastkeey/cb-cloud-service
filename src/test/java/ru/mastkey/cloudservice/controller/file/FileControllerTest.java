@@ -18,6 +18,7 @@ import ru.mastkey.cloudservice.controller.FileController;
 import ru.mastkey.cloudservice.entity.File;
 import ru.mastkey.cloudservice.service.FileService;
 import ru.mastkey.model.FileResponse;
+import ru.mastkey.model.PageFileResponse;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -65,7 +66,10 @@ class FileControllerTest {
         fileResponse.setFileName("testfile.txt");
 
         var fileList = List.of(fileResponse);
-        Page<FileResponse> pagedFiles = new PageImpl<>(fileList, PageRequest.of(0, 2), 2);
+        PageFileResponse pagedFiles = new PageFileResponse();
+        pagedFiles.setContent(fileList);
+        pagedFiles.setTotalPages(1);
+        pagedFiles.setTotalElements(1);
 
 
         when(fileService.getFilesInfo(eq(telegramUserId), any())).thenReturn(pagedFiles);
@@ -75,8 +79,9 @@ class FileControllerTest {
                         .param("pageSize", "10"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$[0].fileName").value("testfile.txt"));
-
+                .andExpect(jsonPath("$.content[0].fileName").value("testfile.txt"))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.totalElements").value(1));
         verify(fileService).getFilesInfo(eq(telegramUserId), any());
     }
 

@@ -5,6 +5,7 @@ import org.springframework.data.domain.PageRequest;
 import ru.mastkey.cloudservice.entity.User;
 import ru.mastkey.cloudservice.entity.Workspace;
 import ru.mastkey.model.CreateWorkspaceRequest;
+import ru.mastkey.model.PageWorkspaceResponse;
 import ru.mastkey.model.WorkspaceResponse;
 
 import java.util.UUID;
@@ -14,7 +15,7 @@ public interface WorkspaceService {
 
     WorkspaceResponse createWorkspace(CreateWorkspaceRequest createWorkspaceRequest);
 
-    Page<WorkspaceResponse> getWorkspaces(Long telegramUserId, PageRequest pageRequest);
+    PageWorkspaceResponse getWorkspaces(Long telegramUserId, PageRequest pageRequest);
 
     WorkspaceResponse changeWorkspaceName(UUID workspaceId, String newWorkspaceName);
 

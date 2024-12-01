@@ -7,11 +7,10 @@ import ru.mastkey.api.WorkspaceControllerApi;
 import ru.mastkey.cloudservice.configuration.properties.Properties;
 import ru.mastkey.cloudservice.service.WorkspaceService;
 import ru.mastkey.cloudservice.util.PaginationUtils;
-import ru.mastkey.cloudservice.util.ResponseFactory;
 import ru.mastkey.model.CreateWorkspaceRequest;
+import ru.mastkey.model.PageWorkspaceResponse;
 import ru.mastkey.model.WorkspaceResponse;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -40,8 +39,8 @@ public class WorkspaceController implements WorkspaceControllerApi {
     }
 
     @Override
-    public ResponseEntity<List<WorkspaceResponse>> getWorkspaces(Long telegramUserId, Integer pageNumber, Integer pageSize) {
+    public ResponseEntity<PageWorkspaceResponse> getWorkspaces(Long telegramUserId, Integer pageNumber, Integer pageSize) {
         var pageRequest = PaginationUtils.buildPageRequest(pageNumber, pageSize, properties.getPageSize());
-        return ResponseFactory.buildPagedResponse(workspaceService.getWorkspaces(telegramUserId, pageRequest));
+        return ResponseEntity.ok(workspaceService.getWorkspaces(telegramUserId, pageRequest));
     }
 }
