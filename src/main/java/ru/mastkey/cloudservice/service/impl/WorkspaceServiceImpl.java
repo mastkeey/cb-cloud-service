@@ -16,6 +16,7 @@ import ru.mastkey.cloudservice.repository.WorkspaceRepository;
 import ru.mastkey.cloudservice.service.WorkspaceService;
 import ru.mastkey.cloudservice.util.SpecificationUtils;
 import ru.mastkey.model.CreateWorkspaceRequest;
+import ru.mastkey.model.PageWorkspaceResponse;
 import ru.mastkey.model.WorkspaceResponse;
 
 import java.util.UUID;
@@ -76,14 +77,15 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<WorkspaceResponse> getWorkspaces(Long telegramUserId, PageRequest pageRequest) {
+    public PageWorkspaceResponse getWorkspaces(Long telegramUserId, PageRequest pageRequest) {
         userRepository.findByTelegramUserId(telegramUserId).orElseThrow(
                 () -> new ServiceException(ErrorType.NOT_FOUND,
                         MSG_USER_NOT_FOUND, telegramUserId)
         );
         var workspaces =  workspaceRepository.findAll(SpecificationUtils.getWorkspacesSpecification(telegramUserId), pageRequest);
+        var pages = workspaces.map(workspace -> conversionService.convert(workspace, WorkspaceResponse.class));
 
-        return workspaces.map(workspace -> conversionService.convert(workspace, WorkspaceResponse.class));
+        return conversionService.convert(pages, PageWorkspaceResponse.class);
     }
 
     @Override

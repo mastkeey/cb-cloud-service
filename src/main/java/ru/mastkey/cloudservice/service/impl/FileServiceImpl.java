@@ -19,6 +19,7 @@ import ru.mastkey.cloudservice.service.FileService;
 import ru.mastkey.cloudservice.util.FileUtils;
 import ru.mastkey.cloudservice.util.SpecificationUtils;
 import ru.mastkey.model.FileResponse;
+import ru.mastkey.model.PageFileResponse;
 
 import java.util.List;
 import java.util.Objects;
@@ -77,7 +78,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<FileResponse> getFilesInfo(Long telegramUserId, PageRequest pageRequest) {
+    public PageFileResponse getFilesInfo(Long telegramUserId, PageRequest pageRequest) {
         var user = userRepository.findByTelegramUserIdWithWorkspaces(telegramUserId).orElseThrow(
                 () -> new ServiceException(ErrorType.NOT_FOUND, MSG_USER_NOT_FOUND, telegramUserId)
         );
@@ -86,8 +87,8 @@ public class FileServiceImpl implements FileService {
 
         var spec = SpecificationUtils.getFilesSpecification(currentWorkspace.getId());
         var files = fileRepository.findAll(spec, pageRequest);
-
-        return files.map(file -> conversionService.convert(file, FileResponse.class));
+        var pages = files.map(file -> conversionService.convert(file, FileResponse.class));
+        return conversionService.convert(pages, PageFileResponse.class);
     }
 
     @Override

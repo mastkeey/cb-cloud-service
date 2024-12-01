@@ -14,6 +14,7 @@ import ru.mastkey.cloudservice.support.IntegrationTestBase;
 import ru.mastkey.cloudservice.util.FileUtils;
 import ru.mastkey.model.ErrorResponse;
 import ru.mastkey.model.FileResponse;
+import ru.mastkey.model.PageFileResponse;
 
 import java.util.Collections;
 import java.util.List;
@@ -124,16 +125,16 @@ class FileControllerIntegrationTest extends IntegrationTestBase {
         String url = String.format("/api/v1/files/users/%s?pageNumber=0&pageSize=10",
                 savedWorkspace.getUser().getTelegramUserId());
 
-        ResponseEntity<List<FileResponse>> response = testRestTemplate.exchange(
+        ResponseEntity<PageFileResponse> response = testRestTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<List<FileResponse>>() {}
+                PageFileResponse.class
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        var files = response.getBody();
+        var files = response.getBody().getContent();
         assertThat(files).isNotNull();
         assertThat(files.size()).isEqualTo(2);
     }

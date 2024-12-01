@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,6 +26,7 @@ import ru.mastkey.cloudservice.repository.WorkspaceRepository;
 import ru.mastkey.cloudservice.service.impl.FileServiceImpl;
 import ru.mastkey.cloudservice.util.FileUtils;
 import ru.mastkey.model.FileResponse;
+import ru.mastkey.model.PageFileResponse;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -177,16 +179,22 @@ class FileServiceImplTest {
         file.setId(UUID.randomUUID());
         file.setFileName("testfile");
         file.setFileExtension("txt");
+
         var files = List.of(file);
         var fileResponse = new FileResponse();
-
         var pagedFiles = new PageImpl<>(files, pageRequest, files.size());
         var workspaceId = UUID.randomUUID();
         workspace.setId(workspaceId);
 
-        when(userRepository.findByTelegramUserIdWithWorkspaces(telegramUserId)).thenReturn(Optional.of(user));
+        var pageResponse = new PageFileResponse();
+        pageResponse.setContent(List.of(fileResponse));
+        pageResponse.setTotalPages(1);
+        pageResponse.setTotalElements(1);
+
+        when(userRepository.findByTelegramUserIdWithWorkspaces(eq(telegramUserId))).thenReturn(Optional.of(user));
         when(fileRepository.findAll(any(Specification.class), eq(pageRequest))).thenReturn(pagedFiles);
         when(conversionService.convert(file, FileResponse.class)).thenReturn(fileResponse);
+        when(conversionService.convert(any(Page.class), eq(PageFileResponse.class))).thenReturn(pageResponse);
 
         var result = fileServiceImpl.getFilesInfo(telegramUserId, pageRequest);
 
@@ -194,7 +202,7 @@ class FileServiceImplTest {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0)).isEqualTo(fileResponse);
 
-        verify(userRepository).findByTelegramUserIdWithWorkspaces(telegramUserId);
+        verify(userRepository).findByTelegramUserIdWithWorkspaces(eq(telegramUserId));
         verify(fileRepository).findAll(any(Specification.class), eq(pageRequest));
         verify(conversionService).convert(file, FileResponse.class);
     }

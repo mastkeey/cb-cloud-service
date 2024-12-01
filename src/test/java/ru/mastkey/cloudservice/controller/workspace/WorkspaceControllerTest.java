@@ -1,11 +1,11 @@
 package ru.mastkey.cloudservice.controller.workspace;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.hibernate.query.Page;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
@@ -14,6 +14,7 @@ import ru.mastkey.cloudservice.configuration.properties.Properties;
 import ru.mastkey.cloudservice.controller.WorkspaceController;
 import ru.mastkey.cloudservice.service.WorkspaceService;
 import ru.mastkey.model.CreateWorkspaceRequest;
+import ru.mastkey.model.PageWorkspaceResponse;
 import ru.mastkey.model.WorkspaceResponse;
 
 import java.util.List;
@@ -110,23 +111,26 @@ class WorkspaceControllerTest {
 
         var workspace2 = new WorkspaceResponse();
         workspace2.setName("Workspace 2");
-
         var workspaceList = List.of(workspace1, workspace2);
-        Page<WorkspaceResponse> pagedWorkspaces = new PageImpl<>(workspaceList, PageRequest.of(0, 2), 2);
+        PageWorkspaceResponse pagedWorkspaces = new PageWorkspaceResponse();
+        pagedWorkspaces.setContent(workspaceList);
+        pagedWorkspaces.setTotalElements(2);
+        pagedWorkspaces.setTotalPages(1);
+
 
         when(workspaceService.getWorkspaces(eq(telegramUserId), any(PageRequest.class)))
                 .thenReturn(pagedWorkspaces);
 
         mockMvc.perform(get("/api/v1/workspaces/users/{telegramUserId}", telegramUserId)
-                        .param("pageNumber", "1")
+                        .param("pageNumber", "0")
                         .param("pageSize", "2"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].name").value("Workspace 1"))
-                .andExpect(jsonPath("$[1].name").value("Workspace 2"))
-                .andExpect(header().string("Total-Pages", "1"));
-    }
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$.content[0].name").value("Workspace 1"))
+                .andExpect(jsonPath("$.content[1].name").value("Workspace 2"))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2));    }
 
 
     @Test
