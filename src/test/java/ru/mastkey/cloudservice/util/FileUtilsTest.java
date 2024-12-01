@@ -62,7 +62,7 @@ class FileUtilsTest {
         String fileName = "document";
         String fileExtension = "txt";
 
-        String result = FileUtils.generateRelativePath(workspace, fileName, fileExtension);
+        String result = FileUtils.generateRelativePath(workspace.getName(), fileName, fileExtension);
         assertThat(result).isEqualTo("project/document.txt");
     }
 
@@ -73,7 +73,7 @@ class FileUtilsTest {
         String fileName = "document";
         String fileExtension = "";
 
-        String result = FileUtils.generateRelativePath(workspace, fileName, fileExtension);
+        String result = FileUtils.generateRelativePath(workspace.getName(), fileName, fileExtension);
         assertThat(result).isEqualTo("project/document.");
     }
 }

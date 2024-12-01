@@ -141,13 +141,15 @@ class FileServiceImplTest {
 
     @Test
     void uploadFile_ShouldUploadFile_WhenFileExists() {
+        var exstFile = new File();
+        exstFile.setPath("path");
         when(multipartFile.getOriginalFilename()).thenReturn("existingfile.txt");
         fileUtilsMockedStatic.when(() -> FileUtils.getFileNameWithoutExtension("existingfile.txt")).thenReturn("existingfile");
         fileUtilsMockedStatic.when(() -> FileUtils.getFileExtension("existingfile.txt")).thenReturn("txt");
-        fileUtilsMockedStatic.when(() -> FileUtils.generateRelativePath(workspace, "existingfile", "txt"))
+        fileUtilsMockedStatic.when(() -> FileUtils.generateRelativePath(workspace.getName(), "existingfile", "txt"))
                 .thenReturn("generated/relative/path/to/existingfile.txt");
         when(fileRepository.findByWorkspaceAndFileNameAndFileExtension(workspace, "existingfile", "txt"))
-                .thenReturn(Optional.of(new File()));
+                .thenReturn(Optional.of(exstFile));
 
         fileServiceImpl.uploadFile(multipartFile, workspace);
 
@@ -160,7 +162,7 @@ class FileServiceImplTest {
         when(multipartFile.getOriginalFilename()).thenReturn("newfile.txt");
         fileUtilsMockedStatic.when(() -> FileUtils.getFileNameWithoutExtension("newfile.txt")).thenReturn("newfile");
         fileUtilsMockedStatic.when(() -> FileUtils.getFileExtension("newfile.txt")).thenReturn("txt");
-        fileUtilsMockedStatic.when(() -> FileUtils.generateRelativePath(workspace, "newfile", "txt"))
+        fileUtilsMockedStatic.when(() -> FileUtils.generateRelativePath(workspace.getName(), "newfile", "txt"))
                 .thenReturn("generated/relative/path/to/newfile.txt");
         when(fileRepository.findByWorkspaceAndFileNameAndFileExtension(workspace, "newfile", "txt"))
                 .thenReturn(Optional.empty());
@@ -226,18 +228,17 @@ class FileServiceImplTest {
     void deleteFile_ShouldDeleteFileSuccessfully() {
         var fileId = UUID.randomUUID();
         var file = new File();
+        file.setPath("path/to/testfile.txt");
         file.setFileName("testfile");
         file.setFileExtension("txt");
         file.setWorkspace(workspace);
 
         when(fileRepository.findById(fileId)).thenReturn(Optional.of(file));
-        fileUtilsMockedStatic.when(() -> FileUtils.generateRelativePath(workspace, "testfile", "txt"))
-                .thenReturn("path/to/testfile.txt");
 
         fileServiceImpl.deleteFile(fileId);
 
         verify(fileRepository).findById(fileId);
-        verify(s3Client).deleteFile(eq(user.getBucketName()), eq("path/to/testfile.txt"));
+        verify(s3Client).deleteFile(eq(user.getBucketName()), eq(file.getPath()));
     }
 
     @Test
@@ -257,13 +258,13 @@ class FileServiceImplTest {
     void downloadFile_ShouldReturnFileContent() {
         var fileId = UUID.randomUUID();
         var file = new File();
+        file.setPath("path/to/testfile.txt");
         file.setFileName("testfile");
         file.setFileExtension("txt");
         file.setWorkspace(workspace);
 
         when(fileRepository.findById(fileId)).thenReturn(Optional.of(file));
-        fileUtilsMockedStatic.when(() -> FileUtils.generateRelativePath(workspace, "testfile", "txt"))
-                .thenReturn("path/to/testfile.txt");
+
         when(s3Client.getFileStream(user.getBucketName(), "path/to/testfile.txt"))
                 .thenReturn(new ByteArrayInputStream("file content" .getBytes()));
 
@@ -273,7 +274,7 @@ class FileServiceImplTest {
         assertThat(result.file()).isEqualTo(file);
         assertThat(result.inputStream()).isNotNull();
         verify(fileRepository).findById(fileId);
-        verify(s3Client).getFileStream(eq(user.getBucketName()), eq("path/to/testfile.txt"));
+        verify(s3Client).getFileStream(eq(user.getBucketName()), eq(file.getPath()));
     }
 
     @Test

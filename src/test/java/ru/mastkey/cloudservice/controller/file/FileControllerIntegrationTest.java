@@ -145,7 +145,8 @@ class FileControllerIntegrationTest extends IntegrationTestBase {
         file.setFileName("testfile");
         file.setFileExtension(".txt");
         String bucketName = workspace.getUser().getBucketName();
-        String s3Path = FileUtils.generateRelativePath(workspace, file.getFileName(), file.getFileExtension());
+        String s3Path = FileUtils.generateRelativePath(workspace.getName(), file.getFileName(), file.getFileExtension());
+        file.setPath(s3Path);
         byte[] fileContent = "Test file content".getBytes();
         MockMultipartFile mockFile = new MockMultipartFile(
                 "file",
