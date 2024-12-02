@@ -13,8 +13,8 @@ public class FileUtils {
         return dotIndex == -1 ? "" : fileName.substring(dotIndex + 1);
     }
 
-    public static String generateRelativePath(Workspace workspace, String fileName, String fileExtension) {
-        return String.format("%s/%s.%s", workspace.getName(), fileName, fileExtension);
+    public static String generateRelativePath(String folder, String fileName, String fileExtension) {
+        return String.format("%s/%s.%s", folder, fileName, fileExtension);
     }
 
     public static String getFullFileName(String fileName, String fileExtension) {

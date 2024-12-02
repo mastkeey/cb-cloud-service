@@ -2,7 +2,6 @@ package ru.mastkey.cloudservice.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +21,6 @@ import ru.mastkey.model.FileResponse;
 import ru.mastkey.model.PageFileResponse;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import static ru.mastkey.cloudservice.util.Constants.*;
@@ -58,17 +56,18 @@ public class FileServiceImpl implements FileService {
         var fileNameWithoutExtension = FileUtils.getFileNameWithoutExtension(originalFileName);
         var fileExtension = FileUtils.getFileExtension(originalFileName);
         var bucketName = workspace.getUser().getBucketName();
-        var relativePath = FileUtils.generateRelativePath(workspace, fileNameWithoutExtension, fileExtension);
+        var relativePath = FileUtils.generateRelativePath(workspace.getName(), fileNameWithoutExtension, fileExtension);
 
         var existingFile = fileRepository.findByWorkspaceAndFileNameAndFileExtension(workspace, fileNameWithoutExtension, fileExtension);
 
         if (existingFile.isPresent()) {
-            s3Client.uploadFile(file, bucketName, relativePath);
+            s3Client.uploadFile(file, bucketName, existingFile.get().getPath());
         } else {
             var newFile = File.builder()
                     .workspace(workspace)
                     .fileName(fileNameWithoutExtension)
                     .fileExtension(fileExtension)
+                    .path(relativePath)
                     .build();
 
             fileRepository.save(newFile);
@@ -98,9 +97,8 @@ public class FileServiceImpl implements FileService {
                 () -> new ServiceException(ErrorType.BAD_REQUEST, MSG_FILE_NOT_FOUND, fileId)
         );
 
-        var path = FileUtils.generateRelativePath(file.getWorkspace(), file.getFileName(), file.getFileExtension());
         var bucketName = file.getWorkspace().getUser().getBucketName();
-        s3Client.deleteFile(bucketName, path);
+        s3Client.deleteFile(bucketName, file.getPath());
         fileRepository.delete(file);
     }
 
@@ -112,9 +110,8 @@ public class FileServiceImpl implements FileService {
         );
 
         var bucketName = file.getWorkspace().getUser().getBucketName();
-        var path = FileUtils.generateRelativePath(file.getWorkspace(), file.getFileName(), file.getFileExtension());
 
-        var fileStream = s3Client.getFileStream(bucketName, path);
+        var fileStream = s3Client.getFileStream(bucketName, file.getPath());
 
         return new FileContent(fileStream, file);
     }

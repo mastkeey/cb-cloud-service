@@ -30,6 +30,9 @@ public class File {
     @Column(name = "file_name", nullable = false)
     private String fileName;
 
+    @Column(name = "path", nullable = false)
+    private String path;
+
     @Column(name = "file_extension", nullable = false)
     private String fileExtension;
 
