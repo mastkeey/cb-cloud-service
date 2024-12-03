@@ -34,7 +34,7 @@
     </scm>
     <properties>
         <java.version>17</java.version>
-        <api-version>1.0.0-main</api-version>
+        <api-version>1.0.0-CS-open-api-5</api-version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -162,6 +162,31 @@
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+            <version>3.1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.11.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.11.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.11.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -216,6 +241,7 @@
                     <excludes>
                         <exclude>**/*MapperImpl.class</exclude>
                         <exclude>ru/mastkey/cloudservice/configuration/**</exclude>
+                        <exclude>ru/mastkey/cloudservice/aop/**</exclude>
                         <exclude>ru/mastkey/cloudservice/entity/**</exclude>
                         <exclude>**/ServiceException.class</exclude>
                         <exclude>**/Constants.class</exclude>

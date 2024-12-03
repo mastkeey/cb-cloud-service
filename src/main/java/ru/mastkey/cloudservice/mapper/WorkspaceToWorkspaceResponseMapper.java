@@ -10,7 +10,7 @@ import ru.mastkey.model.WorkspaceResponse;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface WorkspaceToWorkspaceResponseMapper extends Converter<Workspace, WorkspaceResponse> {
     @Override
-    @Mapping(target = "telegramUserId", source = "user.telegramUserId")
     @Mapping(target = "workspaceId", source = "id")
+    @Mapping(target = "userId", source = "ownerId")
     WorkspaceResponse convert(Workspace source);
 }

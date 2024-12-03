@@ -9,8 +9,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
-    Optional<User> findByTelegramUserId(Long telegramUserId);
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.workspaces w WHERE u.id = :id")
+    Optional<User> findByUserIdWithWorkspaces(@Param("id") UUID id);
 
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.workspaces WHERE u.telegramUserId = :telegramUserId")
-    Optional<User> findByTelegramUserIdWithWorkspaces(@Param("telegramUserId") Long telegramUserId);
+    Optional<User> findByUsername(String username);
 }
