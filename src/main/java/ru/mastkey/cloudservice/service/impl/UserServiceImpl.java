@@ -2,66 +2,65 @@ package ru.mastkey.cloudservice.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.mastkey.cloudservice.client.S3Client;
 import ru.mastkey.cloudservice.entity.User;
 import ru.mastkey.cloudservice.exception.ErrorType;
 import ru.mastkey.cloudservice.exception.ServiceException;
 import ru.mastkey.cloudservice.repository.UserRepository;
+import ru.mastkey.cloudservice.security.JwtService;
 import ru.mastkey.cloudservice.service.UserService;
-import ru.mastkey.cloudservice.service.WorkspaceService;
+import ru.mastkey.model.AuthUserRequest;
 import ru.mastkey.model.CreateUserRequest;
-import ru.mastkey.model.UserResponse;
+import ru.mastkey.model.CreateUserResponse;
+import ru.mastkey.model.TokenResponse;
 
-import java.util.UUID;
-
-import static ru.mastkey.cloudservice.util.Constants.*;
+import static ru.mastkey.cloudservice.util.Constants.MSG_USER_ALREADY_EXIST;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final ConversionService conversionService;
     private final UserRepository userRepository;
-    private final WorkspaceService workspaceService;
-    private final S3Client s3Client;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final UserDetailsService userDetailsService;
+    private final JwtService jwtService;
 
     @Transactional
     @Override
-    public UserResponse createUser(CreateUserRequest request) {
-        userRepository.findByTelegramUserId(request.getTelegramUserId()).ifPresent(user -> {
-            throw new ServiceException(ErrorType.CONFLICT,
-                    MSG_USER_ALREADY_EXIST, user.getTelegramUserId());
-        });
+    public CreateUserResponse createUser(CreateUserRequest request) {
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new ServiceException(ErrorType.CONFLICT, MSG_USER_ALREADY_EXIST, request.getUsername());
+        }
 
         var user = conversionService.convert(request, User.class);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        var savedUser = userRepository.save(user);
-
-        s3Client.createBucketIfNotExists(user.getBucketName());
-        var workspace = workspaceService.createWorkspaceForNewUser(savedUser, request.getUsername());
-
-        user.setCurrentWorkspace(workspace);
-        userRepository.save(savedUser);
-
-        return conversionService.convert(savedUser, UserResponse.class);
+        return conversionService.convert(userRepository.save(user), CreateUserResponse.class);
     }
 
-    @Transactional
     @Override
-    public void changeCurrentWorkspace(Long telegramUserId, UUID newWorkspaceId) {
-        var user = userRepository.findByTelegramUserIdWithWorkspaces(telegramUserId).orElseThrow(
-                () -> new ServiceException(ErrorType.NOT_FOUND, MSG_USER_NOT_FOUND, telegramUserId)
-        );
+    public TokenResponse auth(AuthUserRequest authUserRequest) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authUserRequest.getUsername(), authUserRequest.getPassword())
+            );
+        } catch (BadCredentialsException e) {
+            throw new ServiceException(ErrorType.UNAUTHORIZED, "Incorrect password");
+        }
 
-        var newCurrentWorkspace = user.getWorkspaces().stream()
-                .filter(workspace -> workspace.getId().equals(newWorkspaceId))
-                .findFirst()
-                .orElseThrow(
-                        () -> new ServiceException(ErrorType.NOT_FOUND, MSG_USER_DOESNT_HAVE_WORKSPACE, telegramUserId, newWorkspaceId)
-                );
+        UserDetails userDetails = userDetailsService.loadUserByUsername(authUserRequest.getUsername());
+        var userId = userRepository.findByUsername(authUserRequest.getUsername()).get().getId();
 
-        user.setCurrentWorkspace(newCurrentWorkspace);
-        userRepository.save(user);
+        var token = jwtService.generateToken(userDetails.getUsername(), userId);
+
+        return new TokenResponse(token);
     }
 }

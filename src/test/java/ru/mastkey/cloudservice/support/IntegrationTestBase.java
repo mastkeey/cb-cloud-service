@@ -9,9 +9,11 @@ import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.mastkey.cloudservice.client.S3Client;
 import ru.mastkey.cloudservice.entity.User;
+import ru.mastkey.cloudservice.entity.UserWorkspace;
 import ru.mastkey.cloudservice.entity.Workspace;
 import ru.mastkey.cloudservice.repository.FileRepository;
 import ru.mastkey.cloudservice.repository.UserRepository;
+import ru.mastkey.cloudservice.repository.UserWorkspaceRepository;
 import ru.mastkey.cloudservice.repository.WorkspaceRepository;
 
 import java.util.ArrayList;
@@ -23,6 +25,9 @@ import java.util.ArrayList;
 public class IntegrationTestBase {
     @Autowired
     protected TestRestTemplate testRestTemplate;
+
+    @Autowired
+    protected UserWorkspaceRepository userWorkspaceRepository;
 
     @Autowired
     protected UserRepository userRepository;
@@ -38,8 +43,6 @@ public class IntegrationTestBase {
 
     protected User createUser() {
         var user = new User();
-        user.setTelegramUserId(123L);
-        user.setChatId(123L);
         user.setBucketName("test");
         s3Client.createBucketIfNotExists(user.getBucketName());
         return userRepository.save(user);
@@ -47,24 +50,22 @@ public class IntegrationTestBase {
 
     protected Workspace createWorkspaceWithUser() {
         var user = userRepository.save(User.builder()
-                .telegramUserId(1L)
-                .chatId(1L)
                 .bucketName("mastkey-1")
                 .workspaces(new ArrayList<>())
                 .build());
 
         var workspace = Workspace.builder()
                 .name("mastkey")
-                .user(user)
                 .build();
 
         workspace = workspaceRepository.save(workspace);
 
-        user.getWorkspaces().add(workspace);
-
-        user.setCurrentWorkspace(workspace);
-
         userRepository.save(user);
+
+        var userWorkspace = new UserWorkspace();
+        userWorkspace.setUser(user);
+        userWorkspace.setWorkspace(workspace);
+        userWorkspaceRepository.save(userWorkspace);
 
         s3Client.createBucketIfNotExists(user.getBucketName());
 

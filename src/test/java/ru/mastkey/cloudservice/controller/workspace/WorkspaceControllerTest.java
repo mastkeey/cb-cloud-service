@@ -1,12 +1,10 @@
 package ru.mastkey.cloudservice.controller.workspace;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.hibernate.query.Page;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -44,30 +42,27 @@ class WorkspaceControllerTest {
 
     @Test
     void createWorkspace_ShouldReturnWorkspaceResponse() throws Exception {
-        var testWorkspaceName = "test-workspace";
-
         var request = new CreateWorkspaceRequest();
-        request.setTelegramUserId(12345L);
-        request.setName(testWorkspaceName);
+        request.setName("test-workspace");
+        request.setUserId(UUID.randomUUID());
 
         var workspaceResponse = new WorkspaceResponse();
-        workspaceResponse.setName(testWorkspaceName);
+        workspaceResponse.setName("test-workspace");
 
-        when(workspaceService.createWorkspace(any(CreateWorkspaceRequest.class))).thenReturn(workspaceResponse);
-        when(properties.getPageSize()).thenReturn(10);
+        when(workspaceService.createWorkspace(any(CreateWorkspaceRequest.class)))
+                .thenReturn(workspaceResponse);
 
         mockMvc.perform(post("/api/v1/workspaces")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value(testWorkspaceName));
+                .andExpect(jsonPath("$.name").value("test-workspace"));
     }
 
     @Test
     void createWorkspace_ShouldReturnBadRequest_WhenRequestIsInvalid() throws Exception {
         var request = new CreateWorkspaceRequest();
-        request.setName("test_workspace");
 
         mockMvc.perform(post("/api/v1/workspaces")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -78,68 +73,70 @@ class WorkspaceControllerTest {
     @Test
     void changeWorkspaceName_ShouldReturnUpdatedWorkspaceResponse() throws Exception {
         var workspaceId = UUID.randomUUID();
+        var userId = UUID.randomUUID();
         var newWorkspaceName = "updated-workspace";
 
         var updatedWorkspaceResponse = new WorkspaceResponse();
         updatedWorkspaceResponse.setName(newWorkspaceName);
 
-        when(workspaceService.changeWorkspaceName(eq(workspaceId), eq(newWorkspaceName)))
+        when(workspaceService.changeWorkspaceName(eq(workspaceId), eq(userId), eq(newWorkspaceName)))
                 .thenReturn(updatedWorkspaceResponse);
 
-        mockMvc.perform(patch("/api/v1/workspaces/{workspaceId}", workspaceId)
+        mockMvc.perform(patch("/api/v1/workspaces/{workspaceId}/users/{userId}", workspaceId, userId)
                         .param("newWorkspaceName", newWorkspaceName))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.name").value(newWorkspaceName));
     }
 
-
     @Test
-    void changeWorkspaceName_ShouldReturnBadRequest() throws Exception {
+    void changeWorkspaceName_ShouldReturnBadRequest_WhenNameIsMissing() throws Exception {
         var workspaceId = UUID.randomUUID();
+        var userId = UUID.randomUUID();
 
-        mockMvc.perform(patch("/api/v1/workspaces/{workspaceId}", workspaceId))
+        mockMvc.perform(patch("/api/v1/workspaces/{workspaceId}/users/{userId}", workspaceId, userId))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void getWorkspaces_ShouldReturnPagedWorkspaceList() throws Exception {
-        var telegramUserId = 12345L;
-
+        var userId = UUID.randomUUID();
         var workspace1 = new WorkspaceResponse();
         workspace1.setName("Workspace 1");
-
         var workspace2 = new WorkspaceResponse();
         workspace2.setName("Workspace 2");
+
         var workspaceList = List.of(workspace1, workspace2);
-        PageWorkspaceResponse pagedWorkspaces = new PageWorkspaceResponse();
-        pagedWorkspaces.setContent(workspaceList);
-        pagedWorkspaces.setTotalElements(2);
-        pagedWorkspaces.setTotalPages(1);
+        var pagedResponse = new PageWorkspaceResponse();
+        pagedResponse.setContent(workspaceList);
+        pagedResponse.setTotalPages(1);
+        pagedResponse.setTotalElements(2);
 
+        var pageRequest = PageRequest.of(0, 2);
 
-        when(workspaceService.getWorkspaces(eq(telegramUserId), any(PageRequest.class)))
-                .thenReturn(pagedWorkspaces);
+        when(properties.getPageSize()).thenReturn(10);
+        when(workspaceService.getWorkspaces(eq(userId), eq(pageRequest)))
+                .thenReturn(pagedResponse);
 
-        mockMvc.perform(get("/api/v1/workspaces/users/{telegramUserId}", telegramUserId)
-                        .param("pageNumber", "0")
+        mockMvc.perform(get("/api/v1/workspaces/users/{userId}", userId)
+                        .param("page", "0")
                         .param("pageSize", "2"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(3))
                 .andExpect(jsonPath("$.content[0].name").value("Workspace 1"))
                 .andExpect(jsonPath("$.content[1].name").value("Workspace 2"))
                 .andExpect(jsonPath("$.totalPages").value(1))
-                .andExpect(jsonPath("$.totalElements").value(2));    }
-
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
 
     @Test
     void deleteWorkspace_ShouldReturnOk() throws Exception {
         var workspaceId = UUID.randomUUID();
+        var userId = UUID.randomUUID();
 
-        doNothing().when(workspaceService).deleteWorkspace(workspaceId);
+        doNothing().when(workspaceService).deleteWorkspace(workspaceId, userId);
 
-        mockMvc.perform(delete("/api/v1/workspaces/{workspaceId}", workspaceId))
+        mockMvc.perform(delete("/api/v1/workspaces/{workspaceId}/users/{userId}", workspaceId, userId))
                 .andExpect(status().isOk());
     }
 }

@@ -11,6 +11,7 @@ import ru.mastkey.model.CreateWorkspaceRequest;
 import ru.mastkey.model.PageWorkspaceResponse;
 import ru.mastkey.model.WorkspaceResponse;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,26 +22,29 @@ public class WorkspaceController implements WorkspaceControllerApi {
     private final Properties properties;
 
     @Override
+    public ResponseEntity<WorkspaceResponse> changeWorkspaceName(UUID workspaceId, UUID userId, String newName) {
+        return ResponseEntity.ok(workspaceService.changeWorkspaceName(workspaceId, userId, newName));
+    }
+
+    @Override
     public ResponseEntity<WorkspaceResponse> createWorkspace(CreateWorkspaceRequest request) {
         return ResponseEntity.ok(workspaceService.createWorkspace(request));
     }
 
     @Override
-    public ResponseEntity<WorkspaceResponse> changeWorkspaceName(
-            UUID workspaceId,
-            String newWorkspaceName) {
-        return ResponseEntity.ok(workspaceService.changeWorkspaceName(workspaceId, newWorkspaceName));
-    }
-
-    @Override
-    public ResponseEntity<Void> deleteWorkspace(UUID workspaceId) {
-        workspaceService.deleteWorkspace(workspaceId);
+    public ResponseEntity<Void> deleteWorkspace(UUID workspaceId, UUID userId) {
+        workspaceService.deleteWorkspace(workspaceId, userId);
         return ResponseEntity.ok().build();
     }
 
     @Override
-    public ResponseEntity<PageWorkspaceResponse> getWorkspaces(Long telegramUserId, Integer pageNumber, Integer pageSize) {
-        var pageRequest = PaginationUtils.buildPageRequest(pageNumber, pageSize, properties.getPageSize());
-        return ResponseEntity.ok(workspaceService.getWorkspaces(telegramUserId, pageRequest));
+    public ResponseEntity<List<WorkspaceResponse>> getAllWorkspaces(UUID uuid) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<PageWorkspaceResponse> getWorkspaces(UUID userId, Integer page, Integer pageSize) {
+        var pageRequest = PaginationUtils.buildPageRequest(page, pageSize, properties.getPageSize());
+        return ResponseEntity.ok(workspaceService.getWorkspaces(userId, pageRequest));
     }
 }

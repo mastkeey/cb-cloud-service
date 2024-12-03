@@ -11,13 +11,14 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import ru.mastkey.cloudservice.controller.UserController;
 import ru.mastkey.cloudservice.service.UserService;
 import ru.mastkey.model.CreateUserRequest;
-import ru.mastkey.model.UserResponse;
+import ru.mastkey.model.CreateUserResponse;
 
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
 class UserControllerTest {
@@ -33,17 +34,13 @@ class UserControllerTest {
 
     @Test
     void createUser_ShouldReturnUserResponse() throws Exception {
-        var testTgUserId = 12345L;
-        var testChatUserId = 12345L;
-
+        var testName = "testuser";
         var request = new CreateUserRequest();
-        request.setTelegramUserId(testTgUserId);
-        request.setUsername("testuser");
-        request.setChatId(testChatUserId);
+        request.setUsername(testName);
 
-        var userResponse = new UserResponse();
-        userResponse.setTelegramUserId(testTgUserId);
-        userResponse.setChatId(testChatUserId);
+        var userResponse = new CreateUserResponse();
+        userResponse.setId(UUID.randomUUID());
+        userResponse.workspaceId(UUID.randomUUID());
 
         when(userService.createUser(any(CreateUserRequest.class))).thenReturn(userResponse);
 
@@ -52,15 +49,12 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.telegramUserId").value(testTgUserId))
-                .andExpect(jsonPath("$.chatId").value(testChatUserId));
+                .andExpect(content().json(objectMapper.writeValueAsString(userResponse)));
     }
 
     @Test
     void createUser_ShouldReturnBadRequest_WhenRequestIsInvalid() throws Exception {
         var request = new CreateUserRequest();
-        request.setUsername("testuser");
-        request.setTelegramUserId(null);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -68,25 +62,15 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    @Test
-    void changeCurrentWorkspace_ShouldReturnOk() throws Exception {
-        var telegramUserId = 12345L;
-        var newWorkspaceId = UUID.randomUUID();
-
-        doNothing().when(userService).changeCurrentWorkspace(telegramUserId, newWorkspaceId);
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/users/{telegramUserId}/changeCurrentWorkspace", telegramUserId)
-                        .param("newWorkspaceId", newWorkspaceId.toString()))
-                .andExpect(status().isOk());
-
-        verify(userService).changeCurrentWorkspace(telegramUserId, newWorkspaceId);
-    }
-
-    @Test
-    void changeCurrentWorkspace_ShouldReturnBadRequest_WhenWorkspaceNameIsMissing() throws Exception {
-        var telegramUserId = 12345L;
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/users/{telegramUserId}/changeCurrentWorkspace", telegramUserId))
-                .andExpect(status().isBadRequest());
-    }
+//    @Test
+//    void addNewWorkspace_ShouldReturnOk() throws Exception {
+//        var userId = UUID.randomUUID();
+//        var workspaceId = UUID.randomUUID();
+//
+//        doNothing().when(userService).addNewWorkspace(userId, workspaceId);
+//
+//        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/users/{userId}/workspaces/{workspaceId}", userId, workspaceId)
+//                        .contentType(MediaType.APPLICATION_JSON))
+//                .andExpect(status().isOk());
+//    }
 }

@@ -11,15 +11,15 @@ import ru.mastkey.model.WorkspaceResponse;
 import java.util.UUID;
 
 public interface WorkspaceService {
-    Workspace createWorkspace(Long userId, String name);
+    Workspace createWorkspace(UUID userId, String name);
 
     WorkspaceResponse createWorkspace(CreateWorkspaceRequest createWorkspaceRequest);
 
-    PageWorkspaceResponse getWorkspaces(Long telegramUserId, PageRequest pageRequest);
+    PageWorkspaceResponse getWorkspaces(UUID userId, PageRequest pageRequest);
 
-    WorkspaceResponse changeWorkspaceName(UUID workspaceId, String newWorkspaceName);
+    WorkspaceResponse changeWorkspaceName(UUID workspaceId, UUID userId, String newName);
 
-    void deleteWorkspace(UUID workspaceId);
+    void deleteWorkspace(UUID workspaceId, UUID userId);
 
     Workspace createWorkspaceForNewUser(User user, String name);
 }

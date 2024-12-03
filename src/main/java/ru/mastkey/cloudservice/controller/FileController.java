@@ -23,25 +23,25 @@ public class FileController implements FileControllerApi {
     private final Properties properties;
 
     @Override
-    public ResponseEntity<Void> deleteFile(UUID fileId) {
-        fileService.deleteFile(fileId);
+    public ResponseEntity<Void> deleteFile(UUID fileId, UUID workspaceId, UUID userId) {
+        fileService.deleteFile(fileId, workspaceId, userId);
         return ResponseEntity.ok().build();
     }
 
     @Override
-    public ResponseEntity<Resource> getFile(UUID fileId) {
-        return ResponseFactory.createFileResponse(fileService.downloadFile(fileId));
+    public ResponseEntity<Resource> getFile(UUID fileId, UUID workspaceId, UUID userId) {
+        return ResponseFactory.createFileResponse(fileService.downloadFile(fileId, workspaceId, userId));
     }
 
     @Override
-    public ResponseEntity<PageFileResponse> getFilesInfo(Long telegramUserId, Integer pageNumber, Integer pageSize) {
-        var pageRequest = PaginationUtils.buildPageRequest(pageNumber, pageSize, properties.getPageSize());
-        return ResponseEntity.ok(fileService.getFilesInfo(telegramUserId, pageRequest));
+    public ResponseEntity<PageFileResponse> getFilesInfo(UUID userId, UUID workspaceId, Integer page, Integer pageSize) {
+        var pageRequest = PaginationUtils.buildPageRequest(page, pageSize, properties.getPageSize());
+        return ResponseEntity.ok(fileService.getFilesInfo(userId, workspaceId, pageRequest));
     }
 
     @Override
-    public ResponseEntity<Void> uploadFiles(Long telegramUserId, List<MultipartFile> files) {
-        fileService.uploadFiles(files, telegramUserId);
+    public ResponseEntity<Void> uploadFiles(UUID userId, UUID workspaceId, List<MultipartFile> files) {
+        fileService.uploadFiles(userId, workspaceId, files);
         return ResponseEntity.ok().build();
     }
 }

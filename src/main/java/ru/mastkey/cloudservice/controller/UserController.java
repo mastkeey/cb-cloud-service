@@ -5,8 +5,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import ru.mastkey.api.UserControllerApi;
 import ru.mastkey.cloudservice.service.UserService;
+import ru.mastkey.model.AuthUserRequest;
 import ru.mastkey.model.CreateUserRequest;
-import ru.mastkey.model.UserResponse;
+import ru.mastkey.model.CreateUserResponse;
+import ru.mastkey.model.TokenResponse;
 
 import java.util.UUID;
 
@@ -16,13 +18,17 @@ public class UserController implements UserControllerApi {
     private final UserService userService;
 
     @Override
-    public ResponseEntity<Void> changeCurrentWorkspace(UUID newWorkspaceId, Long telegramUserId) {
-        userService.changeCurrentWorkspace(telegramUserId, newWorkspaceId);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> addNewWorkspace(UUID uuid, UUID uuid1) {
+        return null;
     }
 
     @Override
-    public ResponseEntity<UserResponse> createUser(CreateUserRequest createUserRequest) {
+    public ResponseEntity<TokenResponse> authUser(AuthUserRequest authUserRequest) {
+        return ResponseEntity.ok(userService.auth(authUserRequest));
+    }
+
+    @Override
+    public ResponseEntity<CreateUserResponse> createUser(CreateUserRequest createUserRequest) {
         return ResponseEntity.ok(userService.createUser(createUserRequest));
     }
 }

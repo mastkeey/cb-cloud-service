@@ -7,7 +7,7 @@ public class Constants {
     public final String MSG_FILE_NOT_FOUND = "File with id %s not found";
     public final String MSG_FILE_INVALID_NAME = "Invalid file name";
     public final String MSG_USER_NOT_FOUND = "User with id %s not found";
-    public final String MSG_USER_ALREADY_EXIST = "User with id %s already exist";
+    public final String MSG_USER_ALREADY_EXIST = "User with name %s already exist";
     public final String MSG_WORKSPACE_NOT_FOUND = "Workspace with id %s not found";
     public final String MSG_USER_DOESNT_HAVE_WORKSPACE = "User with id %s does not have a Workspace with id %s";
     public final String MSG_CURRENT_WORKSPACE_ERROR = "Error with current workspace";
@@ -20,4 +20,6 @@ public class Constants {
     public final String MSG_WORKSPACE_ALREADY_EXIST = "Workspace with name %s already exist";
     public final String MSG_LAST_WORKSPACE = "You can't delete last workspace";
     public final String MSG_DELETE_CURRENT_WORKSPACE = "You can't delete current workspace";
+    public final String MSG_WORKSPACE_NOT_LINKED_TO_USER = "Workspace with ID %s is not linked to user with ID %s.";
+    public final String MSG_FILE_NOT_IN_WORKSPACE = "File with ID %s is not part of workspace with ID %s.";
 }

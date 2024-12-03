@@ -4,15 +4,20 @@ import jakarta.persistence.criteria.Join;
 import org.springframework.data.jpa.domain.Specification;
 import ru.mastkey.cloudservice.entity.File;
 import ru.mastkey.cloudservice.entity.User;
+import ru.mastkey.cloudservice.entity.UserWorkspace;
 import ru.mastkey.cloudservice.entity.Workspace;
 
 import java.util.UUID;
 
 public class SpecificationUtils {
-    public static Specification<Workspace> getWorkspacesSpecification(Long telegramUserId) {
+    public static Specification<Workspace> getWorkspacesSpecification(UUID userId) {
         return Specification.where((root, query, criteriaBuilder) -> {
-            Join<Workspace, User> userJoin = root.join("user");
-            var userCondition = criteriaBuilder.equal(userJoin.get("telegramUserId"), telegramUserId);
+            Join<Workspace, UserWorkspace> userWorkspaceJoin = root.join("userWorkspaces");
+
+            Join<UserWorkspace, User> userJoin = userWorkspaceJoin.join("user");
+
+            var userCondition = criteriaBuilder.equal(userJoin.get("id"), userId);
+
             return criteriaBuilder.and(userCondition);
         });
     }

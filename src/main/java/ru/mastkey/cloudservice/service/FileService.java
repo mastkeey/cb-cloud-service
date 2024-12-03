@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.multipart.MultipartFile;
 import ru.mastkey.cloudservice.client.model.FileContent;
+import ru.mastkey.cloudservice.entity.User;
 import ru.mastkey.cloudservice.entity.Workspace;
 import ru.mastkey.model.FileResponse;
 import ru.mastkey.model.PageFileResponse;
@@ -12,9 +13,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface FileService {
-    void uploadFiles(List<MultipartFile> files, Long userId);
-    void uploadFile(MultipartFile file, Workspace workspace);
-    void deleteFile(UUID fileId);
-    PageFileResponse getFilesInfo(Long telegramUserId, PageRequest pageRequest);
-    FileContent downloadFile(UUID fileId);
+    void uploadFiles(UUID userId, UUID workspaceId, List<MultipartFile> files);
+    void uploadFile(MultipartFile file, Workspace workspace, User user);
+    void deleteFile(UUID fileId, UUID workspaceId, UUID userId);
+    PageFileResponse getFilesInfo(UUID userId, UUID workspaceId, PageRequest pageRequest);
+    FileContent downloadFile(UUID fileId, UUID workspaceId, UUID userId);
 }
