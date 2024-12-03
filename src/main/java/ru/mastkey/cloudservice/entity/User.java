@@ -3,7 +3,6 @@ package ru.mastkey.cloudservice.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.Accessors;
-import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,15 +20,8 @@ import java.util.UUID;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false, updatable = false, unique = true)
     private UUID id;
-
-    @Column(name = "telegram_user_id", nullable = false)
-    private Long telegramUserId;
-
-    @Column(name = "chat_id", nullable = false)
-    private Long chatId;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -37,15 +29,25 @@ public class User {
     @Column(name = "bucket_name", nullable = false)
     private String bucketName;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "current_workspace_id")
-    private Workspace currentWorkspace;
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Column(name = "password", nullable = false)
+    private String password;
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_workspace",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "workspace_id")
+    )
     private List<Workspace> workspaces = new ArrayList<>();
 
     @PrePersist
     void prePersist() {
+        var uuid = UUID.randomUUID();
+        this.id = uuid;
+        this.bucketName = uuid.toString();
         this.createdAt = LocalDateTime.now();
     }
 }

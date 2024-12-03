@@ -1,9 +1,7 @@
 package ru.mastkey.cloudservice.controller.file;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.util.LinkedMultiValueMap;
@@ -13,11 +11,8 @@ import ru.mastkey.cloudservice.entity.Workspace;
 import ru.mastkey.cloudservice.support.IntegrationTestBase;
 import ru.mastkey.cloudservice.util.FileUtils;
 import ru.mastkey.model.ErrorResponse;
-import ru.mastkey.model.FileResponse;
 import ru.mastkey.model.PageFileResponse;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,34 +22,37 @@ class FileControllerIntegrationTest extends IntegrationTestBase {
     @Test
     void uploadFileSuccessTest() {
         var savedWorkspace = createWorkspaceWithUser();
+        var savedUser = savedWorkspace.getUsers().get(0);
+        var token = createTokenForSavedUser(savedUser);
 
-        ClassPathResource resource1 = new ClassPathResource("files/testfile.txt");
-        ClassPathResource bigResource = new ClassPathResource("files/large_file.txt");
+        ClassPathResource resource = new ClassPathResource("files/testfile.txt");
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("files", resource1);
-        body.add("files", bigResource);
+        body.add("files", resource);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.addAll(createAuthHeader(token));
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
         ResponseEntity<Void> response = testRestTemplate.postForEntity(
-                "/api/v1/files/users/" + savedWorkspace.getUser().getTelegramUserId(),
+                "/api/v1/files/workspaces/" + savedWorkspace.getId(),
                 requestEntity,
                 Void.class
         );
 
-        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         var workspace = workspaceRepository.findByIdWithFiles(savedWorkspace.getId()).get();
-        assertThat(workspace.getFiles().size()).isEqualTo(2);
+        assertThat(workspace.getFiles().size()).isEqualTo(1);
     }
 
     @Test
     void uploadFilesWithSameFilenamesSuccessTest() {
         var savedWorkspace = createWorkspaceWithUser();
+        var savedUser = savedWorkspace.getUsers().get(0);
+        var token = createTokenForSavedUser(savedUser);
 
         ClassPathResource resource1 = new ClassPathResource("files/testfile.txt");
         ClassPathResource resource2 = new ClassPathResource("files/testfile.csv");
@@ -65,11 +63,12 @@ class FileControllerIntegrationTest extends IntegrationTestBase {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.addAll(createAuthHeader(token));
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
         ResponseEntity<Void> response = testRestTemplate.postForEntity(
-                "/api/v1/files/users/" + savedWorkspace.getUser().getTelegramUserId(),
+                "/api/v1/files/workspaces/" + savedWorkspace.getId(),
                 requestEntity,
                 Void.class
         );
@@ -84,10 +83,22 @@ class FileControllerIntegrationTest extends IntegrationTestBase {
     void getFileSuccessTest() {
         var savedWorkspace = createWorkspaceWithUser();
         var file = createFileInWorkspace(savedWorkspace);
+        var savedUser = savedWorkspace.getUsers().get(0);
+        var token = createTokenForSavedUser(savedUser);
 
-        String url = String.format("/api/v1/files/%s", file.getId());
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(createAuthHeader(token));
 
-        ResponseEntity<byte[]> response = testRestTemplate.getForEntity(url, byte[].class);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        String url = String.format("/api/v1/files/%s/workspaces/%s", file.getId(), savedWorkspace.getId());
+
+        ResponseEntity<byte[]> response = testRestTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                requestEntity,
+                byte[].class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_OCTET_STREAM);
@@ -95,18 +106,22 @@ class FileControllerIntegrationTest extends IntegrationTestBase {
         assertThat(response.getBody().length).isGreaterThan(0);
     }
 
-
     @Test
     void deleteFileSuccessTest() {
         var savedWorkspace = createWorkspaceWithUser();
         var file = createFileInWorkspace(savedWorkspace);
+        var savedUser = savedWorkspace.getUsers().get(0);
+        var token = createTokenForSavedUser(savedUser);
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(createAuthHeader(token));
 
-        String url = String.format("/api/v1/files/%s", file.getId());
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+        String url = String.format("/api/v1/files/%s/workspaces/%s", file.getId(), savedWorkspace.getId());
 
         ResponseEntity<Void> response = testRestTemplate.exchange(
                 url,
                 HttpMethod.DELETE,
-                null,
+                requestEntity,
                 Void.class
         );
 
@@ -121,14 +136,19 @@ class FileControllerIntegrationTest extends IntegrationTestBase {
         var savedWorkspace = createWorkspaceWithUser();
         createFileInWorkspace(savedWorkspace);
         createFileInWorkspace(savedWorkspace);
+        var savedUser = savedWorkspace.getUsers().get(0);
+        var token = createTokenForSavedUser(savedUser);
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(createAuthHeader(token));
 
-        String url = String.format("/api/v1/files/users/%s?pageNumber=0&pageSize=10",
-                savedWorkspace.getUser().getTelegramUserId());
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        String url = String.format("/api/v1/files/workspaces/%s", savedWorkspace.getId());
 
         ResponseEntity<PageFileResponse> response = testRestTemplate.exchange(
                 url,
                 HttpMethod.GET,
-                null,
+                requestEntity,
                 PageFileResponse.class
         );
 
@@ -139,62 +159,22 @@ class FileControllerIntegrationTest extends IntegrationTestBase {
         assertThat(files.size()).isEqualTo(2);
     }
 
-    private File createFileInWorkspace(Workspace workspace) {
-        var file = new File();
-        file.setWorkspace(workspace);
-        file.setFileName("testfile");
-        file.setFileExtension(".txt");
-        String bucketName = workspace.getUser().getBucketName();
-        String s3Path = FileUtils.generateRelativePath(workspace.getName(), file.getFileName(), file.getFileExtension());
-        file.setPath(s3Path);
-        byte[] fileContent = "Test file content".getBytes();
-        MockMultipartFile mockFile = new MockMultipartFile(
-                "file",
-                "testfile.txt",
-                MediaType.TEXT_PLAIN_VALUE,
-                "Test file content".getBytes()
-        );
-        s3Client.uploadFile(mockFile, bucketName, s3Path);
-        return fileRepository.save(file);
-    }
-
-    @Test
-    void uploadFileToNonExistingUserTest() {
-        var nonExistingUserId = 14212L;
-
-        ClassPathResource resource = new ClassPathResource("files/testfile.txt");
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("files", resource);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
-        ResponseEntity<ErrorResponse> response = testRestTemplate.postForEntity(
-                "/api/v1/files/users/" + nonExistingUserId,
-                requestEntity,
-                ErrorResponse.class
-        );
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-
-        var error = response.getBody();
-        assertThat(error).isNotNull();
-        assertThat(error.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
-        assertThat(error.getMessage()).contains("User with id");
-    }
-
     @Test
     void deleteFileNotFoundTest() {
+        var savedWorkspace = createWorkspaceWithUser();
         var randomFileId = UUID.randomUUID();
+        var savedUser = savedWorkspace.getUsers().get(0);
+        var token = createTokenForSavedUser(savedUser);
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(createAuthHeader(token));
 
-        String url = String.format("/api/v1/files/%s", randomFileId);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+        String url = String.format("/api/v1/files/%s/workspaces/%s", randomFileId, savedWorkspace.getId());
 
         ResponseEntity<ErrorResponse> response = testRestTemplate.exchange(
                 url,
                 HttpMethod.DELETE,
-                null,
+                requestEntity,
                 ErrorResponse.class
         );
 
@@ -207,19 +187,101 @@ class FileControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    void getFilesInfoUserNotFoundTest() {
-        var nonExistingUserId = 12345L;
+    void uploadFileWithoutTokenUnauthorizedTest() {
+        var savedWorkspace = createWorkspaceWithUser();
 
-        String url = String.format("/api/v1/files/users/%s?pageNumber=0&pageSize=10", nonExistingUserId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-        ResponseEntity<ErrorResponse> response = testRestTemplate.getForEntity(url, ErrorResponse.class);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(null, headers);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        ResponseEntity<Void> response = testRestTemplate.postForEntity(
+                "/api/v1/files/workspaces/" + savedWorkspace.getId(),
+                requestEntity,
+                Void.class
+        );
 
-        var error = response.getBody();
-        assertThat(error).isNotNull();
-        assertThat(error.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
-        assertThat(error.getMessage()).contains("User with id");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
+    @Test
+    void getFileWithoutTokenUnauthorizedTest() {
+        var savedWorkspace = createWorkspaceWithUser();
+        var file = createFileInWorkspace(savedWorkspace);
+
+        HttpHeaders headers = new HttpHeaders();
+
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        String url = String.format("/api/v1/files/%s/workspaces/%s", file.getId(), savedWorkspace.getId());
+
+        ResponseEntity<Void> response = testRestTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                requestEntity,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void deleteFileWithoutTokenUnauthorizedTest() {
+        var savedWorkspace = createWorkspaceWithUser();
+        var file = createFileInWorkspace(savedWorkspace);
+
+        HttpHeaders headers = new HttpHeaders();
+
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        String url = String.format("/api/v1/files/%s/workspaces/%s", file.getId(), savedWorkspace.getId());
+
+        ResponseEntity<Void> response = testRestTemplate.exchange(
+                url,
+                HttpMethod.DELETE,
+                requestEntity,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void getFilesInfoWithoutTokenUnauthorizedTest() {
+        var savedWorkspace = createWorkspaceWithUser();
+
+        HttpHeaders headers = new HttpHeaders();
+
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        String url = String.format("/api/v1/files/workspaces/%s", savedWorkspace.getId());
+
+        ResponseEntity<Void> response = testRestTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                requestEntity,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    private File createFileInWorkspace(Workspace workspace) {
+        var file = new File();
+        file.setWorkspace(workspace);
+        file.setFileName("testfile");
+        file.setFileExtension(".txt");
+        String bucketName = workspace.getUsers().get(0).getBucketName();
+        String s3Path = FileUtils.generateRelativePath(workspace.getName(), file.getFileName(), file.getFileExtension());
+        file.setPath(s3Path);
+        byte[] fileContent = "Test file content".getBytes();
+        MockMultipartFile mockFile = new MockMultipartFile(
+                "file",
+                "testfile.txt",
+                MediaType.TEXT_PLAIN_VALUE,
+                "Test file content".getBytes()
+        );
+        s3Client.uploadFile(mockFile, bucketName, s3Path);
+        return fileRepository.save(file);
+    }
 }

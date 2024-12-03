@@ -2,15 +2,11 @@ package ru.mastkey.cloudservice.controller.workspace;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import ru.mastkey.cloudservice.entity.Workspace;
+import org.springframework.http.*;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import ru.mastkey.cloudservice.entity.UserWorkspace;
 import ru.mastkey.cloudservice.support.IntegrationTestBase;
-import ru.mastkey.model.CreateWorkspaceRequest;
-import ru.mastkey.model.ErrorResponse;
-import ru.mastkey.model.PageWorkspaceResponse;
-import ru.mastkey.model.WorkspaceResponse;
+import ru.mastkey.model.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,72 +19,48 @@ class WorkspaceControllerIntegrationTest extends IntegrationTestBase {
     @Test
     void createWorkspaceSuccessTest() {
         var user = createUser();
+        var token = createTokenForSavedUser(user);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(createAuthHeader(token));
+
         var request = new CreateWorkspaceRequest();
         request.setName("test");
-        request.setTelegramUserId(user.getTelegramUserId());
 
-        ResponseEntity<WorkspaceResponse> response =  testRestTemplate
-                .postForEntity(BASE_URL, request, WorkspaceResponse.class);
+        HttpEntity<CreateWorkspaceRequest> requestEntity = new HttpEntity<>(request, headers);
+
+        ResponseEntity<WorkspaceResponse> response = testRestTemplate.exchange(
+                BASE_URL,
+                HttpMethod.POST,
+                requestEntity,
+                WorkspaceResponse.class);
 
         var workspaceResponse = response.getBody();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         var savedWorkspace = workspaceRepository.findById(workspaceResponse.getWorkspaceId());
-        var savedUser = userRepository.findByTelegramUserIdWithWorkspaces(workspaceResponse.getTelegramUserId()).get();
+        var savedUser = userRepository.findByUserIdWithWorkspaces(user.getId()).get();
 
         assertThat(savedWorkspace).isNotEmpty();
         assertThat(savedWorkspace.get().getName()).isEqualTo(workspaceResponse.getName());
-        assertThat(savedWorkspace.get().getUser().getId()).isEqualTo(user.getId());
         assertThat(savedUser.getWorkspaces().size()).isEqualTo(1);
     }
 
     @Test
-    void createWorkspaceNotFoundTest() {
-        var testId = 123L;
-        var request = new CreateWorkspaceRequest();
-        request.setName("test");
-        request.setTelegramUserId(testId);
-
-        ResponseEntity<ErrorResponse> response = testRestTemplate
-                .postForEntity(BASE_URL, request, ErrorResponse.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-
-        var error = response.getBody();
-
-        assertThat(error.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
-        assertThat(error.getMessage()).isEqualTo("User with id %s not found".formatted(testId));
-    }
-
-    @Test
-    void getWorkspacesUserNotFoundTest() {
-        var testUserId = 123123L;
-
-        String urlWithParams = String.format("/api/v1/workspaces/users/%s",
-                testUserId);
-
-        ResponseEntity<ErrorResponse> response = testRestTemplate
-                .getForEntity(urlWithParams, ErrorResponse.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-
-        var error = response.getBody();
-
-        assertThat(error.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
-        assertThat(error.getMessage()).isEqualTo(String.format("User with id %s not found", testUserId));
-    }
-
-    @Test
     void getWorkspacesSuccessTest() {
-        var testUserId = createWorkspaceWithUser().getUser().getTelegramUserId();
+        var savedWorkspace = createWorkspaceWithUser();
+        var savedUser = savedWorkspace.getUsers().get(0);
+        var token = createTokenForSavedUser(savedUser);
 
-        String urlWithParams = String.format("/api/v1/workspaces/users/%s",
-                testUserId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(createAuthHeader(token));
+
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
         ResponseEntity<PageWorkspaceResponse> response = testRestTemplate.exchange(
-                urlWithParams,
+                BASE_URL,
                 HttpMethod.GET,
-                null,
+                requestEntity,
                 PageWorkspaceResponse.class
         );
 
@@ -103,16 +75,27 @@ class WorkspaceControllerIntegrationTest extends IntegrationTestBase {
     @Test
     void changeWorkspaceNameSuccessTest() {
         var workspace = createWorkspaceWithUser();
-        var workspaceId = workspace.getId();
         var newName = "UpdatedWorkspaceName";
+        var workspaceId = workspace.getId();
+        var savedUser = workspace.getUsers().get(0);
+        var token = createTokenForSavedUser(savedUser);
+        workspace.setOwner(savedUser);
+        workspaceRepository.save(workspace);
 
-        String urlWithParams = String.format("/api/v1/workspaces/%s?newWorkspaceName=%s",
-                workspaceId, newName);
+        var changeRequest = new ChangeWorkspaceNameRequest(newName);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(createAuthHeader(token));
+
+        HttpEntity<ChangeWorkspaceNameRequest> requestEntity = new HttpEntity<>(changeRequest, headers);
+
+        String urlWithParams = String.format("/api/v1/workspaces/%s",
+                workspaceId);
 
         ResponseEntity<WorkspaceResponse> response = testRestTemplate.exchange(
                 urlWithParams,
                 HttpMethod.PATCH,
-                null,
+                requestEntity,
                 WorkspaceResponse.class
         );
 
@@ -126,16 +109,29 @@ class WorkspaceControllerIntegrationTest extends IntegrationTestBase {
 
     @Test
     void changeWorkspaceNameNotFoundTest() {
+        var workspace = createWorkspaceWithUser();
+        var savedUser = workspace.getUsers().get(0);
+        var token = createTokenForSavedUser(savedUser);
+        workspace.setOwner(savedUser);
+        workspaceRepository.save(workspace);
+
         var randomWorkspaceId = UUID.randomUUID();
         var newName = "NonExistentWorkspace";
 
-        String urlWithParams = String.format("/api/v1/workspaces/%s?newWorkspaceName=%s",
-                randomWorkspaceId, newName);
+        var changeRequest = new ChangeWorkspaceNameRequest(newName);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(createAuthHeader(token));
+
+        HttpEntity<ChangeWorkspaceNameRequest> requestEntity = new HttpEntity<>(changeRequest, headers);
+
+        String urlWithParams = String.format("/api/v1/workspaces/%s",
+                randomWorkspaceId);
 
         ResponseEntity<ErrorResponse> response = testRestTemplate.exchange(
                 urlWithParams,
                 HttpMethod.PATCH,
-                null,
+                requestEntity,
                 ErrorResponse.class
         );
 
@@ -152,21 +148,25 @@ class WorkspaceControllerIntegrationTest extends IntegrationTestBase {
     @Test
     void deleteWorkspaceSuccessTest() {
         var workspace = createWorkspaceWithUser();
-        var user = workspace.getUser();
-        var newWorkspace = new Workspace();
-        newWorkspace.setName("testtest");
-        newWorkspace.setUser(user);
-        workspaceRepository.save(newWorkspace);
-        user.getWorkspaces().add(newWorkspace);
+        var user = workspace.getUsers().get(0);
+        workspace.setOwner(user);
+        workspaceRepository.save(workspace);
 
-        var workspaceId = newWorkspace.getId();
+        var token = createTokenForSavedUser(user);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(createAuthHeader(token));
+
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        var workspaceId = workspace.getId();
 
         String urlWithParams = String.format("/api/v1/workspaces/%s", workspaceId);
 
         ResponseEntity<Void> response = testRestTemplate.exchange(
                 urlWithParams,
                 HttpMethod.DELETE,
-                null,
+                requestEntity,
                 Void.class
         );
 
@@ -178,14 +178,23 @@ class WorkspaceControllerIntegrationTest extends IntegrationTestBase {
 
     @Test
     void deleteWorkspaceNotFoundTest() {
+        var workspace = createWorkspaceWithUser();
+        var user = workspace.getUsers().get(0);
         var randomWorkspaceId = UUID.randomUUID();
+
+        var token = createTokenForSavedUser(user);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(createAuthHeader(token));
+
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
         String urlWithParams = String.format("/api/v1/workspaces/%s", randomWorkspaceId);
 
         ResponseEntity<ErrorResponse> response = testRestTemplate.exchange(
                 urlWithParams,
                 HttpMethod.DELETE,
-                null,
+                requestEntity,
                 ErrorResponse.class
         );
 
@@ -195,31 +204,115 @@ class WorkspaceControllerIntegrationTest extends IntegrationTestBase {
 
         assertThat(error.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
         assertThat(error.getMessage()).isEqualTo(
-                String.format("Workspace with id %s not found", randomWorkspaceId)
+                String.format("Workspace with ID %s is not linked to user with ID %s.", randomWorkspaceId, user.getId())
         );
     }
 
     @Test
-    void deleteCurrentWorkspaceConflictTest() {
+    void getAllWorkspacesSuccessTest() {
         var workspace = createWorkspaceWithUser();
-        var user = workspace.getUser();
-        user.setCurrentWorkspace(workspace);
-        userRepository.save(user);
+        var user = workspace.getUsers().get(0);
+        var token = createTokenForSavedUser(user);
 
-        String urlWithParams = String.format("/api/v1/workspaces/%s", workspace.getId());
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(createAuthHeader(token));
 
-        ResponseEntity<ErrorResponse> response = testRestTemplate.exchange(
-                urlWithParams,
-                HttpMethod.DELETE,
-                null,
-                ErrorResponse.class
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        String url = "/api/v1/workspaces/all";
+
+        ResponseEntity<List<WorkspaceResponse>> response = testRestTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                requestEntity,
+                new ParameterizedTypeReference<List<WorkspaceResponse>>() {}
         );
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        var error = response.getBody();
+        var workspaces = response.getBody();
+        assertThat(workspaces).isNotNull();
+        assertThat(workspaces.size()).isEqualTo(1);
+    }
 
-        assertThat(error.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
-        assertThat(error.getMessage()).isEqualTo("You can't delete current workspace");
+    @Test
+    void createWorkspaceWithoutTokenUnauthorizedTest() {
+        var request = new CreateWorkspaceRequest();
+        request.setName("UnauthorizedWorkspace");
+
+        HttpEntity<CreateWorkspaceRequest> requestEntity = new HttpEntity<>(request);
+
+        ResponseEntity<Void> response = testRestTemplate.exchange(
+                BASE_URL,
+                HttpMethod.POST,
+                requestEntity,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void getWorkspacesWithoutTokenUnauthorizedTest() {
+        HttpEntity<Void> requestEntity = new HttpEntity<>(new HttpHeaders());
+
+        ResponseEntity<Void> response = testRestTemplate.exchange(
+                BASE_URL,
+                HttpMethod.GET,
+                requestEntity,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void changeWorkspaceNameWithoutTokenUnauthorizedTest() {
+        var changeRequest = new ChangeWorkspaceNameRequest("UnauthorizedNameChange");
+
+        HttpEntity<ChangeWorkspaceNameRequest> requestEntity = new HttpEntity<>(changeRequest);
+
+        String urlWithParams = String.format("%s/%s", BASE_URL, UUID.randomUUID());
+
+        ResponseEntity<Void> response = testRestTemplate.exchange(
+                urlWithParams,
+                HttpMethod.PATCH,
+                requestEntity,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void deleteWorkspaceWithoutTokenUnauthorizedTest() {
+        String urlWithParams = String.format("%s/%s", BASE_URL, UUID.randomUUID());
+
+        HttpEntity<Void> requestEntity = new HttpEntity<>(new HttpHeaders());
+
+        ResponseEntity<Void> response = testRestTemplate.exchange(
+                urlWithParams,
+                HttpMethod.DELETE,
+                requestEntity,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void getAllWorkspacesWithoutTokenUnauthorizedTest() {
+        var url = "/api/v1/workspaces/all";
+
+        HttpEntity<Void> requestEntity = new HttpEntity<>(new HttpHeaders());
+
+        ResponseEntity<Void> response = testRestTemplate.exchange(
+                url,
+                HttpMethod.DELETE,
+                requestEntity,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 }

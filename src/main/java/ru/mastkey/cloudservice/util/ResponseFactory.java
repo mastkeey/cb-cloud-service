@@ -15,6 +15,9 @@ import ru.mastkey.cloudservice.exception.ErrorType;
 import ru.mastkey.cloudservice.exception.ServiceException;
 import ru.mastkey.model.ErrorResponse;
 
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,8 +53,7 @@ public class ResponseFactory {
         var fileStream = fileContent.inputStream();
         var fileName = FileUtils.getFullFileName(file.getFileName(), file.getFileExtension());
         var headers = new HttpHeaders();
-        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName);
-
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''%s".formatted(URLEncoder.encode(fileName, StandardCharsets.UTF_8)));
 
         return ResponseEntity.ok()
                 .headers(headers)

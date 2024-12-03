@@ -1,8 +1,14 @@
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+
 spring:
   servlet:
     multipart:
-      max-file-size: 15MB
-      max-request-size: 60MB
+      max-file-size: 40MB
+      max-request-size: 400MB
   liquibase:
     change-log: classpath:migrations/db.changelog-master.yaml
   application:
@@ -20,9 +26,9 @@ spring:
     username: ${POSTGRES_USER:sa}
     password: ${POSTGRES_PASSWORD:password}
 s3:
-  url: ${MINIO_URL}
-  accessKey: ${MINIO_ACCESS_KEY}
-  secretKey: ${MINIO_SECRET_KEY}
+  url: ${MINIO_URL:http://localhost:9000}
+  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
+  secretKey: ${MINIO_SECRET_KEY:minioadmin}
 
 properties:
   page-size: 20
@@ -43,3 +49,7 @@ management:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} | %-5level | %logger | %m %X%n"
+
+jwt:
+  ttl-in-min: ${TOKEN_TTL:10}
+  secret-key: ${TOKEN_SECRET}
