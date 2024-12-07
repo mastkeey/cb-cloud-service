@@ -1,8 +1,8 @@
 spring:
   servlet:
     multipart:
-      max-file-size: 15MB
-      max-request-size: 60MB
+      max-file-size: 40MB
+      max-request-size: 400MB
   liquibase:
     change-log: classpath:migrations/db.changelog-master.yaml
   application:
@@ -15,14 +15,14 @@ spring:
       enabled: true
       path: /h2-console
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-    driver-class-name: org.postgresql.Driver
-    username: ${POSTGRES_USER:sa}
-    password: ${POSTGRES_PASSWORD:password}
+    url: jdbc:h2:mem:mydb
+    username: sa
+    password: password
+    driverClassName: org.h2.Driver
 s3:
-  url: ${MINIO_URL}
-  accessKey: ${MINIO_ACCESS_KEY}
-  secretKey: ${MINIO_SECRET_KEY}
+  url: ${MINIO_URL:http://localhost:9000}
+  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
+  secretKey: ${MINIO_SECRET_KEY:minioadmin}
 
 properties:
   page-size: 20
@@ -43,3 +43,7 @@ management:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} | %-5level | %logger | %m %X%n"
+
+jwt:
+  ttl-in-min: 10
+  secret-key: AdasDasdaDaSDASdAdASDAdkjnnasdlkALdALKdnlaNdlASKdnasdasndlasd

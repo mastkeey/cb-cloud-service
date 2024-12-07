@@ -7,10 +7,12 @@ import ru.mastkey.api.WorkspaceControllerApi;
 import ru.mastkey.cloudservice.configuration.properties.Properties;
 import ru.mastkey.cloudservice.service.WorkspaceService;
 import ru.mastkey.cloudservice.util.PaginationUtils;
+import ru.mastkey.model.ChangeWorkspaceNameRequest;
 import ru.mastkey.model.CreateWorkspaceRequest;
 import ru.mastkey.model.PageWorkspaceResponse;
 import ru.mastkey.model.WorkspaceResponse;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,15 +23,13 @@ public class WorkspaceController implements WorkspaceControllerApi {
     private final Properties properties;
 
     @Override
-    public ResponseEntity<WorkspaceResponse> createWorkspace(CreateWorkspaceRequest request) {
-        return ResponseEntity.ok(workspaceService.createWorkspace(request));
+    public ResponseEntity<WorkspaceResponse> changeWorkspaceName(UUID workspaceId, ChangeWorkspaceNameRequest changeWorkspaceNameRequest) {
+        return ResponseEntity.ok(workspaceService.changeWorkspaceName(workspaceId, changeWorkspaceNameRequest));
     }
 
     @Override
-    public ResponseEntity<WorkspaceResponse> changeWorkspaceName(
-            UUID workspaceId,
-            String newWorkspaceName) {
-        return ResponseEntity.ok(workspaceService.changeWorkspaceName(workspaceId, newWorkspaceName));
+    public ResponseEntity<WorkspaceResponse> createWorkspace(CreateWorkspaceRequest request) {
+        return ResponseEntity.ok(workspaceService.createWorkspace(request));
     }
 
     @Override
@@ -39,8 +39,13 @@ public class WorkspaceController implements WorkspaceControllerApi {
     }
 
     @Override
-    public ResponseEntity<PageWorkspaceResponse> getWorkspaces(Long telegramUserId, Integer pageNumber, Integer pageSize) {
-        var pageRequest = PaginationUtils.buildPageRequest(pageNumber, pageSize, properties.getPageSize());
-        return ResponseEntity.ok(workspaceService.getWorkspaces(telegramUserId, pageRequest));
+    public ResponseEntity<List<WorkspaceResponse>> getAllWorkspaces() {
+        return ResponseEntity.ok(workspaceService.getAllWorkspaces());
+    }
+
+    @Override
+    public ResponseEntity<PageWorkspaceResponse> getWorkspaces(Integer page, Integer pageSize) {
+        var pageRequest = PaginationUtils.buildPageRequest(page, pageSize, properties.getPageSize());
+        return ResponseEntity.ok(workspaceService.getWorkspaces(pageRequest));
     }
 }

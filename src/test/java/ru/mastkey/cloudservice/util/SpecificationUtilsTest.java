@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.jpa.domain.Specification;
 import ru.mastkey.cloudservice.entity.File;
 import ru.mastkey.cloudservice.entity.User;
+import ru.mastkey.cloudservice.entity.UserWorkspace;
 import ru.mastkey.cloudservice.entity.Workspace;
 
 import java.util.UUID;
@@ -25,20 +26,23 @@ class SpecificationUtilsTest {
 
     @Test
     void getWorkspacesSpecification_ShouldCreateSpecificationSuccessfully() {
-        Long telegramUserId = 12345L;
+        UUID userId = UUID.randomUUID();
+
         Root<Workspace> root = mock(Root.class);
         CriteriaQuery<?> query = mock(CriteriaQuery.class);
         CriteriaBuilder criteriaBuilder = mock(CriteriaBuilder.class);
-        Join<Workspace, User> join = mock(Join.class);
+        Join<Workspace, User> userJoin = mock(Join.class);
+        jakarta.persistence.criteria.Predicate userCondition = mock(jakarta.persistence.criteria.Predicate.class);
 
-        when(root.<Workspace, User>join("user")).thenReturn(join);
-        when(criteriaBuilder.equal(join.get("telegramUserId"), telegramUserId)).thenReturn(mock(jakarta.persistence.criteria.Predicate.class));
+        when(root.<Workspace, User>join("users")).thenReturn(userJoin);
+        when(criteriaBuilder.equal(userJoin.get("id"), userId)).thenReturn(userCondition);
 
-        Specification<Workspace> specification = SpecificationUtils.getWorkspacesSpecification(telegramUserId);
+        Specification<Workspace> specification = SpecificationUtils.getWorkspacesSpecification(userId);
+
         specification.toPredicate(root, query, criteriaBuilder);
 
-        verify(root).join("user");
-        verify(criteriaBuilder).equal(join.get("telegramUserId"), telegramUserId);
+        verify(root).join("users");
+        verify(criteriaBuilder).equal(userJoin.get("id"), userId);
     }
 
     @Test
