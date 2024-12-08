@@ -25,6 +25,8 @@ import ru.mastkey.cloudservice.util.SpecificationUtils;
 import ru.mastkey.model.FileResponse;
 import ru.mastkey.model.PageFileResponse;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -51,7 +53,7 @@ public class FileServiceImpl implements FileService {
         var userWorkspace = validateUserWorkspace(userId, workspaceId);
 
         files.forEach(file -> {
-            log.debug("Uploading file: {} to workspace: {}", file.getOriginalFilename(), workspaceId);
+            log.debug("Uploading file: {} to workspace: {}", getDecodedFileName(file), workspaceId);
             uploadFile(file, userWorkspace.getWorkspace(), userWorkspace.getUser());
         });
 
@@ -61,17 +63,15 @@ public class FileServiceImpl implements FileService {
     @Override
     @Transactional
     public void uploadFile(MultipartFile file, Workspace workspace, User user) {
-        log.info("Uploading file: {} to workspace: {}", file.getOriginalFilename(), workspace.getId());
+        var fileName = getDecodedFileName(file);
+        log.info("Uploading file: {} to workspace: {}", fileName, workspace.getId());
 
         var relativePath = validateAndGeneratePath(file, workspace);
         log.debug("Generated relative path: {}", relativePath);
 
-        log.info("file original name: {}", file.getOriginalFilename());
-        log.info("file name: {}", file.getName());
-
         var existingFile = findExistingFile(workspace,
-                FileUtils.getFileNameWithoutExtension(file.getOriginalFilename()),
-                FileUtils.getFileExtension(file.getOriginalFilename()));
+                FileUtils.getFileNameWithoutExtension(fileName),
+                FileUtils.getFileExtension(fileName));
 
         if (existingFile.isPresent()) {
             log.warn("File already exists, overwriting: {}", existingFile.get().getPath());
@@ -80,8 +80,8 @@ public class FileServiceImpl implements FileService {
             log.debug("File does not exist, creating new file entry");
             var newFile = File.builder()
                     .workspace(workspace)
-                    .fileName(FileUtils.getFileNameWithoutExtension(file.getOriginalFilename()))
-                    .fileExtension(FileUtils.getFileExtension(file.getOriginalFilename()))
+                    .fileName(FileUtils.getFileNameWithoutExtension(fileName))
+                    .fileExtension(FileUtils.getFileExtension(fileName))
                     .path(relativePath)
                     .build();
 
@@ -168,14 +168,14 @@ public class FileServiceImpl implements FileService {
     }
 
     private String validateAndGeneratePath(MultipartFile file, Workspace workspace) {
-        log.debug("Validating and generating path for file: {}", file.getOriginalFilename());
-        var originalFileName = file.getOriginalFilename();
-        if (originalFileName == null || originalFileName.isBlank()) {
+        var fileName = getDecodedFileName(file);
+        log.debug("Validating and generating path for file: {}", fileName);
+        if (fileName == null || fileName.isBlank()) {
             log.error("Invalid file name");
             throw new ServiceException(ErrorType.BAD_REQUEST, MSG_FILE_INVALID_NAME);
         }
-        var fileNameWithoutExtension = FileUtils.getFileNameWithoutExtension(originalFileName);
-        var fileExtension = FileUtils.getFileExtension(originalFileName);
+        var fileNameWithoutExtension = FileUtils.getFileNameWithoutExtension(fileName);
+        var fileExtension = FileUtils.getFileExtension(fileName);
         return FileUtils.generateRelativePath(workspace.getName(), fileNameWithoutExtension, fileExtension);
     }
 
@@ -189,5 +189,14 @@ public class FileServiceImpl implements FileService {
         log.debug("Uploading file to S3: bucket={}, path={}", bucketName, path);
         s3Client.uploadFile(file, bucketName, path);
         log.info("File uploaded to S3: bucket={}, path={}", bucketName, path);
+    }
+
+    public String getDecodedFileName(MultipartFile file) {
+        String originalFileName = file.getOriginalFilename();
+
+        if (originalFileName != null) {
+            return URLDecoder.decode(originalFileName, StandardCharsets.UTF_8);
+        }
+        return null;
     }
 }

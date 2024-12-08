@@ -293,6 +293,7 @@ class FileServiceImplTest {
     void uploadFile_ShouldReplaceExistingFile() {
         var existingFile = new File();
         existingFile.setPath("path/to/existingfile.txt");
+        workspace.setOwner(user);
 
         when(multipartFile.getOriginalFilename()).thenReturn("existingfile.txt");
         fileUtilsMockedStatic.when(() -> FileUtils.getFileNameWithoutExtension("existingfile.txt")).thenReturn("existingfile");
