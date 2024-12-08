@@ -70,6 +70,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TokenResponse auth(AuthUserRequest authUserRequest) {
         log.info("Authenticating user: {}", authUserRequest.getUsername());
         try {
@@ -91,6 +92,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void addNewWorkspaceById(UUID workspaceId) {
         log.info("Adding new workspace: {} for current user", workspaceId);
 

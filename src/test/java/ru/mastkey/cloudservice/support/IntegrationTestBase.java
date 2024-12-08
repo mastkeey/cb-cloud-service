@@ -56,7 +56,7 @@ public class IntegrationTestBase {
 
     protected User createUser() {
         var user = new User();
-        user.setUsername("mastkey");
+        user.setUsername("mastkeyy");
         user.setPassword(passwordEncoder.encode("mastkey"));
         userRepository.save(user);
         s3Client.createBucketIfNotExists(user.getBucketName());
@@ -73,6 +73,7 @@ public class IntegrationTestBase {
 
         var workspace = Workspace.builder()
                 .name("mastkey")
+                .owner(user)
                 .build();
 
         workspace = workspaceRepository.save(workspace);

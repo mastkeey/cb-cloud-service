@@ -159,25 +159,6 @@ class FileControllerIntegrationTest extends IntegrationTestBase {
         assertThat(files.size()).isEqualTo(2);
     }
 
-    private File createFileInWorkspace(Workspace workspace) {
-        var file = new File();
-        file.setWorkspace(workspace);
-        file.setFileName("testfile");
-        file.setFileExtension(".txt");
-        String bucketName = workspace.getUsers().get(0).getBucketName();
-        String s3Path = FileUtils.generateRelativePath(workspace.getName(), file.getFileName(), file.getFileExtension());
-        file.setPath(s3Path);
-        byte[] fileContent = "Test file content".getBytes();
-        MockMultipartFile mockFile = new MockMultipartFile(
-                "file",
-                "testfile.txt",
-                MediaType.TEXT_PLAIN_VALUE,
-                "Test file content".getBytes()
-        );
-        s3Client.uploadFile(mockFile, bucketName, s3Path);
-        return fileRepository.save(file);
-    }
-
     @Test
     void deleteFileNotFoundTest() {
         var savedWorkspace = createWorkspaceWithUser();
@@ -283,5 +264,24 @@ class FileControllerIntegrationTest extends IntegrationTestBase {
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    private File createFileInWorkspace(Workspace workspace) {
+        var file = new File();
+        file.setWorkspace(workspace);
+        file.setFileName("testfile");
+        file.setFileExtension(".txt");
+        String bucketName = workspace.getUsers().get(0).getBucketName();
+        String s3Path = FileUtils.generateRelativePath(workspace.getName(), file.getFileName(), file.getFileExtension());
+        file.setPath(s3Path);
+        byte[] fileContent = "Test file content".getBytes();
+        MockMultipartFile mockFile = new MockMultipartFile(
+                "file",
+                "testfile.txt",
+                MediaType.TEXT_PLAIN_VALUE,
+                "Test file content".getBytes()
+        );
+        s3Client.uploadFile(mockFile, bucketName, s3Path);
+        return fileRepository.save(file);
     }
 }

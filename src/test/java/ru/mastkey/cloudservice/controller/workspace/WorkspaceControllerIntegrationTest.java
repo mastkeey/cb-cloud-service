@@ -79,7 +79,7 @@ class WorkspaceControllerIntegrationTest extends IntegrationTestBase {
         var workspaceId = workspace.getId();
         var savedUser = workspace.getUsers().get(0);
         var token = createTokenForSavedUser(savedUser);
-        workspace.setOwnerId(savedUser.getId());
+        workspace.setOwner(savedUser);
         workspaceRepository.save(workspace);
 
         var changeRequest = new ChangeWorkspaceNameRequest(newName);
@@ -112,7 +112,7 @@ class WorkspaceControllerIntegrationTest extends IntegrationTestBase {
         var workspace = createWorkspaceWithUser();
         var savedUser = workspace.getUsers().get(0);
         var token = createTokenForSavedUser(savedUser);
-        workspace.setOwnerId(savedUser.getId());
+        workspace.setOwner(savedUser);
         workspaceRepository.save(workspace);
 
         var randomWorkspaceId = UUID.randomUUID();
@@ -149,7 +149,7 @@ class WorkspaceControllerIntegrationTest extends IntegrationTestBase {
     void deleteWorkspaceSuccessTest() {
         var workspace = createWorkspaceWithUser();
         var user = workspace.getUsers().get(0);
-        workspace.setOwnerId(user.getId());
+        workspace.setOwner(user);
         workspaceRepository.save(workspace);
 
         var token = createTokenForSavedUser(user);

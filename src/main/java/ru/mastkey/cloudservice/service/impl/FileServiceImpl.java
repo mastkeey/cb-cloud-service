@@ -17,6 +17,7 @@ import ru.mastkey.cloudservice.exception.ErrorType;
 import ru.mastkey.cloudservice.exception.ServiceException;
 import ru.mastkey.cloudservice.repository.FileRepository;
 import ru.mastkey.cloudservice.repository.UserWorkspaceRepository;
+import ru.mastkey.cloudservice.repository.WorkspaceRepository;
 import ru.mastkey.cloudservice.service.FileService;
 import ru.mastkey.cloudservice.service.HttpContextService;
 import ru.mastkey.cloudservice.util.FileUtils;
@@ -40,6 +41,7 @@ public class FileServiceImpl implements FileService {
     private final ConversionService conversionService;
     private final UserWorkspaceRepository userWorkspaceRepository;
     private final HttpContextService httpContextService;
+    private final WorkspaceRepository workspaceRepository;
 
     @Override
     @Transactional
@@ -64,13 +66,16 @@ public class FileServiceImpl implements FileService {
         var relativePath = validateAndGeneratePath(file, workspace);
         log.debug("Generated relative path: {}", relativePath);
 
+        log.info("file original name: {}", file.getOriginalFilename());
+        log.info("file name: {}", file.getName());
+
         var existingFile = findExistingFile(workspace,
                 FileUtils.getFileNameWithoutExtension(file.getOriginalFilename()),
                 FileUtils.getFileExtension(file.getOriginalFilename()));
 
         if (existingFile.isPresent()) {
             log.warn("File already exists, overwriting: {}", existingFile.get().getPath());
-            uploadToS3(file, user.getBucketName(), existingFile.get().getPath());
+            uploadToS3(file, workspace.getOwner().getBucketName(), existingFile.get().getPath());
         } else {
             log.debug("File does not exist, creating new file entry");
             var newFile = File.builder()
@@ -112,8 +117,10 @@ public class FileServiceImpl implements FileService {
         var file = validateFile(fileId, workspaceId);
         var userWorkspace = validateUserWorkspace(userId, workspaceId);
 
+        var bucketName = userWorkspace.getWorkspace().getOwner().getBucketName();
+
         log.debug("Deleting file from S3 bucket: {}, path: {}", userWorkspace.getUser().getBucketName(), file.getPath());
-        s3Client.deleteFile(getBucketName(userWorkspace), file.getPath());
+        s3Client.deleteFile(bucketName, file.getPath());
         fileRepository.delete(file);
 
         log.info("File successfully deleted: {} from workspace: {}", fileId, workspaceId);
@@ -128,8 +135,10 @@ public class FileServiceImpl implements FileService {
         var file = validateFile(fileId, workspaceId);
         var userWorkspace = validateUserWorkspace(userId, workspaceId);
 
+        var bucketName = userWorkspace.getWorkspace().getOwner().getBucketName();
+
         log.debug("Fetching file stream from S3 bucket: {}, path: {}", userWorkspace.getUser().getBucketName(), file.getPath());
-        var fileStream = s3Client.getFileStream(getBucketName(userWorkspace), file.getPath());
+        var fileStream = s3Client.getFileStream(bucketName, file.getPath());
 
         log.info("File successfully downloaded: {} from workspace: {}", fileId, workspaceId);
         return new FileContent(fileStream, file);
@@ -180,9 +189,5 @@ public class FileServiceImpl implements FileService {
         log.debug("Uploading file to S3: bucket={}, path={}", bucketName, path);
         s3Client.uploadFile(file, bucketName, path);
         log.info("File uploaded to S3: bucket={}, path={}", bucketName, path);
-    }
-
-    private String getBucketName(UserWorkspace userWorkspace) {
-        return userWorkspace.getUser().getBucketName();
     }
 }

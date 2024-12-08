@@ -62,7 +62,7 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
     void authUserSuccessTest() {
         var user = new User();
         user.setUsername("testUser");
-        user.setPassword(passwordEncoder.encode("testPassword")); // Предположим, что используется шифрование
+        user.setPassword(passwordEncoder.encode("testPassword"));
         userRepository.save(user);
 
         var authRequest = new AuthUserRequest();
@@ -79,10 +79,9 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
 
     @Test
     void authUserInvalidCredentialsTest() {
-        // Создаем пользователя
         var user = new User();
         user.setUsername("testUser");
-        user.setPassword(passwordEncoder.encode("testPassword")); // Пароль шифруется
+        user.setPassword(passwordEncoder.encode("testPassword"));
         userRepository.save(user);
 
         var authRequest = new AuthUserRequest();
@@ -116,9 +115,7 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
         var user = createUser();
         var token = createTokenForSavedUser(user);
 
-        var workspace = new Workspace();
-        workspace.setName("Test Workspace");
-        workspaceRepository.save(workspace);
+        var workspace = createWorkspaceWithUser();
 
         HttpHeaders headers = new HttpHeaders();
         headers.addAll(createAuthHeader(token));
@@ -196,7 +193,7 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getMessage()).isEqualTo(
-                String.format("Workspace %s already exist", workspace.getId())
+                String.format("Workspace %s already exists", workspace.getId())
         );
     }
 

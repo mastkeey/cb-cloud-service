@@ -119,6 +119,7 @@ class FileServiceImplTest {
     void deleteFile_ShouldDeleteFileSuccessfully() {
         var fileId = UUID.randomUUID();
         var file = new File();
+        workspace.setOwner(user);
         file.setId(fileId);
         file.setPath("path/to/testfile.txt");
         file.setWorkspace(workspace);
@@ -139,6 +140,7 @@ class FileServiceImplTest {
     void deleteFile_ShouldThrowException_WhenFileNotInWorkspace() {
         var fileId = UUID.randomUUID();
         var file = new File();
+        workspace.setOwner(user);
         file.setId(fileId);
         file.setPath("path/to/testfile.txt");
         file.setWorkspace(new Workspace().setId(UUID.randomUUID()));
@@ -156,6 +158,7 @@ class FileServiceImplTest {
 
     @Test
     void downloadFile_ShouldReturnFileContent() {
+        workspace.setOwner(user);
         var fileId = UUID.randomUUID();
         var file = new File();
         file.setId(fileId);

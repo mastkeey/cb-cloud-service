@@ -30,8 +30,9 @@ public class Workspace {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "owner_id", nullable = false)
-    private UUID ownerId;
+    @OneToOne(optional = false)
+    @JoinColumn(name = "owner_id", referencedColumnName = "id", nullable = false, unique = true)
+    private User owner;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

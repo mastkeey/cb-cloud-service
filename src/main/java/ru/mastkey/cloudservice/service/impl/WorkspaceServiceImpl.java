@@ -57,7 +57,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         var user = validateAndGetUser(userId);
 
         var workspaceExists = user.getWorkspaces().stream()
-                .filter(workspace -> workspace.getOwnerId().equals(user.getId()))
+                .filter(workspace -> workspace.getOwner().getId().equals(user.getId()))
                 .anyMatch(workspace -> workspace.getName().equals(name));
 
         if (workspaceExists) {
@@ -67,7 +67,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
         var workspace = new Workspace();
         workspace.setName(name);
-        workspace.setOwnerId(userId);
+        workspace.setOwner(user);
         var savedWorkspace = workspaceRepository.save(workspace);
         log.info("Workspace saved in repository: {}", savedWorkspace.getId());
 
@@ -144,10 +144,10 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                     return new ServiceException(ErrorType.NOT_FOUND, MSG_WORKSPACE_NOT_LINKED_TO_USER, workspaceId, userId);
                 });
 
-        if (workspace.getOwnerId().equals(userId)) {
+        if (workspace.getOwner().getId().equals(userId)) {
             userWorkspaceRepository.deleteByWorkspaceId(workspaceId);
             workspaceRepository.delete(workspace);
-            s3Client.deleteFolder(user.getBucketName(), workspace.getName());
+            s3Client.deleteFolder(workspace.getOwner().getBucketName(), workspace.getName());
             log.info("Workspace and its S3 folder deleted: {}", workspaceId);
         } else {
             userWorkspaceRepository.deleteByUserIdAndWorkspaceId(userId, workspaceId);

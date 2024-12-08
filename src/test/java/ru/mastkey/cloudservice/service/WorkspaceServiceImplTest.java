@@ -110,7 +110,7 @@ class WorkspaceServiceImplTest {
     @Test
     void createWorkspace_ShouldThrowConflictException_WhenWorkspaceExists() {
         user.getWorkspaces().add(workspace);
-        workspace.setOwnerId(user.getId());
+        workspace.setOwner(user);
         when(httpContextService.getUserIdFromJwtToken()).thenReturn(user.getId());
 
         when(userRepository.findByUserIdWithWorkspaces(user.getId()))
@@ -120,7 +120,7 @@ class WorkspaceServiceImplTest {
                 () -> workspaceService.createWorkspace(createWorkspaceRequest));
 
         assertThat(exception.getCode()).isEqualTo(ErrorType.CONFLICT.getCode());
-        assertThat(exception.getMessage()).isEqualTo("Workspace %s already exist".formatted(createWorkspaceRequest.getName()));
+        assertThat(exception.getMessage()).isEqualTo("Workspace %s already exists".formatted(createWorkspaceRequest.getName()));
 
         verify(userRepository, times(1)).findByUserIdWithWorkspaces(user.getId());
         verify(workspaceRepository, never()).save(any(Workspace.class));
@@ -174,13 +174,13 @@ class WorkspaceServiceImplTest {
 
         var workspace = new Workspace();
         workspace.setId(workspaceId);
-        workspace.setOwnerId(userId);
+        workspace.setOwner(user);
         workspace.setName("old_name");
 
         var updatedWorkspace = new Workspace();
         updatedWorkspace.setId(workspaceId);
         updatedWorkspace.setName(newWorkspaceName);
-        updatedWorkspace.setOwnerId(userId);
+        updatedWorkspace.setOwner(user);
 
         var updatedWorkspaceResponse = new WorkspaceResponse()
                 .workspaceId(workspaceId)
@@ -253,7 +253,7 @@ class WorkspaceServiceImplTest {
         var userId = UUID.randomUUID();
         var newWorkspaceName = "existing_name";
         workspace.setName(newWorkspaceName);
-        workspace.setOwnerId(user.getId());
+        workspace.setOwner(user);
         var request = new ChangeWorkspaceNameRequest(newWorkspaceName);
 
 
@@ -263,14 +263,14 @@ class WorkspaceServiceImplTest {
 
         var existingWorkspace = new Workspace();
         existingWorkspace.setName(newWorkspaceName);
-        existingWorkspace.setOwnerId(user.getId());
+        existingWorkspace.setOwner(user);
         user.getWorkspaces().add(existingWorkspace);
 
         var exception = assertThrows(ServiceException.class,
                 () -> workspaceService.changeWorkspaceName(workspaceId, request));
 
         assertThat(exception.getCode()).isEqualTo(ErrorType.CONFLICT.getCode());
-        assertThat(exception.getMessage()).isEqualTo("Workspace %s already exist".formatted(newWorkspaceName));
+        assertThat(exception.getMessage()).isEqualTo("Workspace %s already exists".formatted(newWorkspaceName));
 
         verify(workspaceRepository, never()).save(any());
     }
@@ -280,7 +280,7 @@ class WorkspaceServiceImplTest {
         when(httpContextService.getUserIdFromJwtToken()).thenReturn(user.getId());
         when(userRepository.findByUserIdWithWorkspaces(user.getId()))
                 .thenReturn(Optional.of(user));
-        workspace.setOwnerId(user.getId());
+        workspace.setOwner(user);
         user.getWorkspaces().add(workspace);
 
         workspaceService.deleteWorkspace(workspace.getId());
@@ -329,7 +329,8 @@ class WorkspaceServiceImplTest {
     void deleteWorkspace_ShouldDeleteUserWorkspaceLink_WhenUserIsNotOwner() {
         var workspaceId = UUID.randomUUID();
         workspace.setId(workspaceId);
-        workspace.setOwnerId(UUID.randomUUID());
+        var randomUser = new User().setId(UUID.randomUUID());
+        workspace.setOwner(randomUser);
         user.getWorkspaces().add(workspace);
 
         when(httpContextService.getUserIdFromJwtToken()).thenReturn(user.getId());

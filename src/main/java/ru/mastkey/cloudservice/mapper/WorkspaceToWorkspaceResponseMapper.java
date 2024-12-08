@@ -11,6 +11,6 @@ import ru.mastkey.model.WorkspaceResponse;
 public interface WorkspaceToWorkspaceResponseMapper extends Converter<Workspace, WorkspaceResponse> {
     @Override
     @Mapping(target = "workspaceId", source = "id")
-    @Mapping(target = "userId", source = "ownerId")
+    @Mapping(target = "userId", source = "owner.id")
     WorkspaceResponse convert(Workspace source);
 }
