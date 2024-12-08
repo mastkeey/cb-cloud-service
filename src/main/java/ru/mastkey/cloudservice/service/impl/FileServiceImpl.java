@@ -17,7 +17,6 @@ import ru.mastkey.cloudservice.exception.ErrorType;
 import ru.mastkey.cloudservice.exception.ServiceException;
 import ru.mastkey.cloudservice.repository.FileRepository;
 import ru.mastkey.cloudservice.repository.UserWorkspaceRepository;
-import ru.mastkey.cloudservice.repository.WorkspaceRepository;
 import ru.mastkey.cloudservice.service.FileService;
 import ru.mastkey.cloudservice.service.HttpContextService;
 import ru.mastkey.cloudservice.util.FileUtils;
@@ -43,7 +42,6 @@ public class FileServiceImpl implements FileService {
     private final ConversionService conversionService;
     private final UserWorkspaceRepository userWorkspaceRepository;
     private final HttpContextService httpContextService;
-    private final WorkspaceRepository workspaceRepository;
 
     @Override
     @Transactional
@@ -85,7 +83,7 @@ public class FileServiceImpl implements FileService {
                     .path(relativePath)
                     .build();
 
-            uploadToS3(file, user.getBucketName(), relativePath);
+            uploadToS3(file, workspace.getOwner().getBucketName(), relativePath);
             fileRepository.save(newFile);
             log.info("File successfully uploaded and saved: {}", relativePath);
         }
