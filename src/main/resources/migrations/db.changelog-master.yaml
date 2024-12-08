@@ -1,4 +1,11 @@
 databaseChangeLog:
-  - includeAll:
-      path: changelog/
-      relativeToChangelogFile: true
+  - include:
+      file: migrations/changelog/CB-2-init_table.sql
+  - include:
+      file: migrations/changelog/CB-4.sql
+  - include:
+      file: migrations/changelog/CB-8.sql
+  - include:
+      file: migrations/changelog/CB-9.sql
+  - include:
+      file: migrations/changelog/CB-10.sql

@@ -1,7 +1,5 @@
 package ru.mastkey.cloudservice.util;
 
-import ru.mastkey.cloudservice.entity.Workspace;
-
 public class FileUtils {
     public static String getFileNameWithoutExtension(String fileName) {
         int dotIndex = fileName.lastIndexOf('.');

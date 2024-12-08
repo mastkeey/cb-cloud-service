@@ -3,7 +3,6 @@ package ru.mastkey.cloudservice.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.Accessors;
-import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
