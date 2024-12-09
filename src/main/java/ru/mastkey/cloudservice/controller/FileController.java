@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.mastkey.api.FileControllerApi;
+import ru.mastkey.cloudservice.aop.StructuralLogWithRequestIdFieldAnnotation;
 import ru.mastkey.cloudservice.configuration.properties.Properties;
 import ru.mastkey.cloudservice.service.FileService;
 import ru.mastkey.cloudservice.util.PaginationUtils;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
+@StructuralLogWithRequestIdFieldAnnotation
 public class FileController implements FileControllerApi {
 
     private final FileService fileService;
