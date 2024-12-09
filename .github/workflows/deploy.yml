@@ -13,10 +13,6 @@ jobs:
     name: Deploy to Server
     runs-on: ubuntu-latest
     steps:
-      - name: Docker Login
-        run: |
-          echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
-
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
@@ -29,6 +25,7 @@ jobs:
         run: |
           ssh root@${{ secrets.SERVER_IP }} <<'EOF'
           cd ./cloud-bot
+          echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
           docker stop cb-cloud-service || true
           docker rm cb-cloud-service || true
           echo "Using Docker image: ${{ secrets.DOCKER_HUB_USERNAME }}/cb-cloud-service:${{ inputs.image_tag }}"
