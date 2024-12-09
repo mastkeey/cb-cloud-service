@@ -102,7 +102,7 @@ class ResponseFactoryTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
-                .isEqualTo("attachment; filename=test.txt");
+                .isEqualTo("attachment; filename*=UTF-8''test.txt");
         assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_OCTET_STREAM);
         assertThat(response.getBody()).isNotNull();
     }

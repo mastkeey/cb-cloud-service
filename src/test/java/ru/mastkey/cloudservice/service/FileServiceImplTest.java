@@ -84,6 +84,7 @@ class FileServiceImplTest {
 
     @Test
     void uploadFiles_ShouldUploadFilesSuccessfully() {
+        workspace.setOwner(user);
         when(httpContextService.getUserIdFromJwtToken()).thenReturn(user.getId());
 
         when(userWorkspaceRepository.findByUserIdAndWorkspaceId(user.getId(), workspace.getId()))
@@ -273,6 +274,7 @@ class FileServiceImplTest {
 
     @Test
     void uploadFile_ShouldThrowException_WhenS3UploadFails() {
+        workspace.setOwner(user);
         when(multipartFile.getOriginalFilename()).thenReturn("testfile.txt");
         fileUtilsMockedStatic.when(() -> FileUtils.getFileNameWithoutExtension("testfile.txt")).thenReturn("testfile");
         fileUtilsMockedStatic.when(() -> FileUtils.getFileExtension("testfile.txt")).thenReturn("txt");
