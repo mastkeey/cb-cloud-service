@@ -37,7 +37,7 @@ public class Workspace {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "workspace")
+    @OneToMany(mappedBy = "workspace", cascade = CascadeType.REMOVE)
     private List<File> files = new ArrayList<>();
 
     @PrePersist
