@@ -23,7 +23,6 @@ import java.io.IOException;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@StructuralLogWithRequestIdFieldAnnotation
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     public static final String BEARER_PREFIX = "Bearer ";
