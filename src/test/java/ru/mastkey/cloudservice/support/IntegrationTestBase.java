@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 @Testcontainers
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {"spring.profiles.active=test"})
 @ContextConfiguration(initializers = {PostgreSQLInitializer.class, MinioInitializer.class})
 @TestPropertySource(locations = "classpath:application-test.yml")
 public class IntegrationTestBase {

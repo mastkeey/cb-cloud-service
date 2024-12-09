@@ -7,3 +7,6 @@ logging:
   level:
     root: DEBUG
     org.springframework: DEBUG
+jwt:
+  secret-key: asdsadasdasdasdasdasdasdasdsadasdsadsaasdasdasdasdad
+  ttl-in-min: 1
