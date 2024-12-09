@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import ru.mastkey.api.WorkspaceControllerApi;
+import ru.mastkey.cloudservice.aop.StructuralLogWithRequestIdFieldAnnotation;
 import ru.mastkey.cloudservice.configuration.properties.Properties;
 import ru.mastkey.cloudservice.service.WorkspaceService;
 import ru.mastkey.cloudservice.util.PaginationUtils;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
+@StructuralLogWithRequestIdFieldAnnotation
 public class WorkspaceController implements WorkspaceControllerApi {
 
     private final WorkspaceService workspaceService;
