@@ -16,12 +16,14 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import ru.mastkey.cloudservice.aop.StructuralLogWithRequestIdFieldAnnotation;
 
 import java.io.IOException;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@StructuralLogWithRequestIdFieldAnnotation
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     public static final String BEARER_PREFIX = "Bearer ";
