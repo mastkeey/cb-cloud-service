@@ -29,7 +29,7 @@ public class S3Client {
                 minioClient.makeBucket(MakeBucketArgs.builder()
                         .bucket(bucketName)
                         .build());
-                log.debug("Корзина с именем  '{}' создана", bucketName);
+                log.debug("Bucket '{}' successfully created", bucketName);
             }
         } catch (Exception e) {
             throw new ServiceException(ErrorType.INTERNAL_SERVER_ERROR, MSG_BUCKET_CREATE_ERROR, e.getMessage());
@@ -54,9 +54,9 @@ public class S3Client {
                             .contentType(contentType)
                             .build()
             );
-            log.debug("Файл '{}' успешно загружен в корзину '{}'", path, bucketName);
+            log.debug("File '{}' successfully uploaded to bucket '{}'", path, bucketName);
         } catch (Exception e) {
-            log.error("Ошибка при загрузке файла в S3: {}", e.getMessage());
+            log.error("Error uploading file to S3: {}", e.getMessage());
             throw new ServiceException(ErrorType.INTERNAL_SERVER_ERROR, MSG_FILE_UPLOAD_ERROR, e.getMessage());
         }
     }
@@ -74,9 +74,9 @@ public class S3Client {
                             .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
                             .build()
             );
-            log.debug("Папка '{}' успешно создана в корзине '{}'", folderPath, bucketName);
+            log.debug("Folder '{}' successfully created in bucket '{}'", folderPath, bucketName);
         } catch (Exception e) {
-            log.error("Ошибка при создании папки в S3: {}", e.getMessage());
+            log.error("Error creating folder in S3: {}", e.getMessage());
             throw new ServiceException(ErrorType.INTERNAL_SERVER_ERROR, MSG_FOLDER_CREATE_ERROR, e.getMessage());
         }
     }
@@ -89,9 +89,9 @@ public class S3Client {
                             .bucket(bucketName)
                             .build()
             );
-            log.debug("Папка '{}' успешно удалена в корзине '{}'", folderPath, bucketName);
+            log.debug("Folder '{}' successfully deleted from bucket '{}'", folderPath, bucketName);
         } catch (Exception e) {
-            log.error("Ошибка при удалении папки в S3: {}", e.getMessage());
+            log.error("Error deleting folder in S3: {}", e.getMessage());
             throw new ServiceException(ErrorType.INTERNAL_SERVER_ERROR, MSG_FOLDER_DELETE_ERROR, e.getMessage());
         }
     }
@@ -104,9 +104,9 @@ public class S3Client {
                             .object(filePath)
                             .build()
             );
-            log.debug("Файл '{}' успешно удален из корзины '{}'", filePath, bucketName);
+            log.debug("File '{}' successfully deleted from bucket '{}'", filePath, bucketName);
         } catch (Exception e) {
-            log.error("Ошибка при удалении файла в S3: {}", e.getMessage());
+            log.error("Error deleting file in S3: {}", e.getMessage());
             throw new ServiceException(ErrorType.INTERNAL_SERVER_ERROR, MSG_FILE_DELETE_ERROR, e.getMessage());
         }
     }
@@ -120,7 +120,7 @@ public class S3Client {
                             .build()
             );
         } catch (Exception e) {
-            log.error("Ошибка при получении файла из S3: {}", e.getMessage());
+            log.error("Error retrieving file from S3: {}", e.getMessage());
             throw new ServiceException(ErrorType.INTERNAL_SERVER_ERROR, MSG_FILE_DOWNLOAD_ERROR, e.getMessage());
         }
     }
