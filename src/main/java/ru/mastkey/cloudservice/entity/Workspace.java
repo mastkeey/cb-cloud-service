@@ -16,7 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "workspace")
+@Table(name = "workspaces")
 public class Workspace {
 
     @Id

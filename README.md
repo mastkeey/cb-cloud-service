@@ -26,7 +26,10 @@
 Основные технологии:
 - **Java 17**
 - **Spring Boot**
+- **Spring Data**
+- **Spring Security**
 - **PostgreSQL**
+- **Liquibase**
 - **Minio**
 - **Docker**
 - **Maven** 
