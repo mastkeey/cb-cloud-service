@@ -16,10 +16,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
     driver-class-name: org.postgresql.Driver

@@ -9,3 +9,5 @@ databaseChangeLog:
       file: migrations/changelog/CB-9.sql
   - include:
       file: migrations/changelog/CB-10.sql
+  - include:
+      file: migrations/changelog/CB-11.sql
