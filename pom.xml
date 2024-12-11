@@ -241,7 +241,6 @@
                     <excludes>
                         <exclude>**/*MapperImpl.class</exclude>
                         <exclude>ru/mastkey/cloudservice/configuration/**</exclude>
-                        <exclude>ru/mastkey/cloudservice/aop/**</exclude>
                         <exclude>ru/mastkey/cloudservice/entity/**</exclude>
                         <exclude>**/ServiceException.class</exclude>
                         <exclude>**/Constants.class</exclude>
