@@ -50,7 +50,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     }
 
     @Override
-    @Transactional
     public Workspace createWorkspace(String name) {
         log.info("Validating and creating workspace with name: {}", name);
         var userId = httpContextService.getUserIdFromJwtToken();
